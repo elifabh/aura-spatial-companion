@@ -1,0 +1,23 @@
+{
+    "name": "Aura",
+    "short_name": "Aura",
+    "description": "AI-powered spatial companion — live better with what you have.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f0f1a",
+    "theme_color": "#0f0f1a",
+    "orientation": "portrait",
+    "categories": ["lifestyle", "health"],
+    "icons": [
+        {
+            "src": "/assets/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

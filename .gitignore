@@ -1,0 +1,40 @@
+# ── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual Environment ──────────────────────
+venv/
+.venv/
+env/
+
+# ── Data (local, private) ───────────────────
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/chroma/
+
+# ── IDE ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Environment ─────────────────────────────
+.env
+
+# ── OS ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Misc ────────────────────────────────────
+*.log
+.pytest_cache/
+htmlcov/
+.coverage
