@@ -55,18 +55,49 @@ def init_db():
             timestamp   TEXT NOT NULL DEFAULT (datetime('now')),
             description TEXT,
             objects     TEXT DEFAULT '[]',
-            suggestions TEXT DEFAULT '[]'
+            suggestions TEXT DEFAULT '[]',
+            scores      TEXT DEFAULT '{}'
+        );
+
+        CREATE TABLE IF NOT EXISTS mood_logs (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      TEXT NOT NULL,
+            mood         TEXT NOT NULL,
+            weather_data TEXT DEFAULT '{}',
+            sun_data     TEXT DEFAULT '{}',
+            timestamp    TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
         CREATE INDEX IF NOT EXISTS idx_conversations_user
             ON conversations(user_id, timestamp);
         CREATE INDEX IF NOT EXISTS idx_env_logs_timestamp
             ON environmental_logs(timestamp);
+            
+        CREATE TABLE IF NOT EXISTS session_evaluations (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id       TEXT NOT NULL,
+            relevance_score REAL,
+            safety_score REAL,
+            feasibility_score REAL,
+            irish_context_score REAL,
+            accessibility_score REAL,
+            overall_score REAL,
+            timestamp     TEXT NOT NULL DEFAULT (datetime('now'))
+        );
     """)
 
     conn.commit()
+    
+    # Simple migration for existing DBs
+    try:
+        cursor.execute("ALTER TABLE space_analyses ADD COLUMN scores TEXT DEFAULT '{}'")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # Column likely already exists
+        pass
+        
     conn.close()
-    print("✦  Database initialised.")
+    print("[Aura] Database initialised (v2).")
 
 
 def log_conversation(user_id: str, user_message: str, aura_reply: str):
@@ -122,6 +153,61 @@ def log_environmental_data(data_type: str, value: str, metadata: str = "{}"):
         VALUES (?, ?, ?)
         """,
         (data_type, value, metadata),
+    )
+    conn.commit()
+    conn.close()
+
+def log_mood(user_id: str, mood: str, weather_data: str = "{}", sun_data: str = "{}"):
+    """Log a user's mood alongside environmental context."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO mood_logs (user_id, mood, weather_data, sun_data)
+        VALUES (?, ?, ?, ?)
+        """,
+        (user_id, mood, weather_data, sun_data)
+    )
+    conn.commit()
+    conn.close()
+
+def get_recent_moods(user_id: str, limit: int = 7) -> list[dict]:
+    """Retrieve recent mood entries for pattern detection."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT mood, weather_data, sun_data, timestamp
+        FROM mood_logs
+        WHERE user_id = ?
+        ORDER BY timestamp DESC
+        LIMIT ?
+        """,
+        (user_id, limit)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [
+        {
+            "mood": r[0],
+            "weather_data": r[1],
+            "sun_data": r[2],
+            "timestamp": r[3]
+        }
+        for r in rows
+    ]
+
+import json
+def log_space_analysis(user_id: str, description: str, objects: list, suggestions: list, score: dict):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO space_analyses (user_id, description, objects, suggestions, scores)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (user_id, description, json.dumps(objects), json.dumps(suggestions), json.dumps(score))
     )
     conn.commit()
     conn.close()

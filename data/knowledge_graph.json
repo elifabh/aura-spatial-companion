@@ -1,0 +1,564 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "type": "condition",
+      "domain": "neurodiversity",
+      "id": "ADHD"
+    },
+    {
+      "type": "condition",
+      "domain": "neurodiversity",
+      "id": "autism"
+    },
+    {
+      "type": "demographic",
+      "domain": "age",
+      "id": "elderly"
+    },
+    {
+      "type": "demographic",
+      "domain": "age",
+      "id": "children"
+    },
+    {
+      "type": "demographic",
+      "domain": "age",
+      "id": "toddler"
+    },
+    {
+      "type": "condition",
+      "domain": "mobility",
+      "id": "wheelchair_user"
+    },
+    {
+      "type": "condition",
+      "domain": "sensory",
+      "id": "visual_impairment"
+    },
+    {
+      "type": "condition",
+      "domain": "sensory",
+      "id": "hearing_impairment"
+    },
+    {
+      "type": "condition",
+      "domain": "mobility",
+      "id": "motor_difficulties"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "natural_light"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "artificial_light"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "ventilation"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "air_quality"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "noise"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "temperature"
+    },
+    {
+      "type": "factor",
+      "domain": "environment",
+      "id": "humidity"
+    },
+    {
+      "type": "season",
+      "domain": "climate",
+      "id": "Irish_winter"
+    },
+    {
+      "type": "season",
+      "domain": "climate",
+      "id": "Irish_summer"
+    },
+    {
+      "type": "weather",
+      "domain": "climate",
+      "id": "cloudy_weather"
+    },
+    {
+      "type": "weather",
+      "domain": "climate",
+      "id": "rain"
+    },
+    {
+      "type": "condition",
+      "domain": "mental_health",
+      "id": "SAD"
+    },
+    {
+      "type": "risk",
+      "domain": "safety",
+      "id": "falls"
+    },
+    {
+      "type": "outcome",
+      "domain": "mental_health",
+      "id": "stress"
+    },
+    {
+      "type": "outcome",
+      "domain": "mental_health",
+      "id": "fatigue"
+    },
+    {
+      "type": "risk",
+      "domain": "neurodiversity",
+      "id": "sensory_overload"
+    },
+    {
+      "type": "risk",
+      "domain": "health",
+      "id": "poor_sleep"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "low_distraction_space"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "clear_pathways"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "wide_doorways"
+    },
+    {
+      "type": "solution",
+      "domain": "safety",
+      "id": "secured_furniture"
+    },
+    {
+      "type": "solution",
+      "domain": "safety",
+      "id": "grab_rails"
+    },
+    {
+      "type": "solution",
+      "domain": "safety",
+      "id": "non_slip_flooring"
+    },
+    {
+      "type": "solution",
+      "domain": "lighting",
+      "id": "mirror_placement"
+    },
+    {
+      "type": "solution",
+      "domain": "lighting",
+      "id": "light_paint"
+    },
+    {
+      "type": "solution",
+      "domain": "lighting",
+      "id": "task_lighting"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "quiet_zone"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "sensory_corner"
+    },
+    {
+      "type": "solution",
+      "domain": "design",
+      "id": "activity_zones"
+    },
+    {
+      "type": "solution",
+      "domain": "montessori",
+      "id": "floor_bed"
+    },
+    {
+      "type": "solution",
+      "domain": "montessori",
+      "id": "low_shelves"
+    },
+    {
+      "type": "solution",
+      "domain": "safety",
+      "id": "safety_gates"
+    },
+    {
+      "type": "solution",
+      "domain": "safety",
+      "id": "window_cord_safety"
+    },
+    {
+      "type": "solution",
+      "domain": "air",
+      "id": "ventilation_routine"
+    },
+    {
+      "type": "solution",
+      "domain": "air",
+      "id": "houseplants"
+    },
+    {
+      "type": "standard",
+      "domain": "building",
+      "id": "WELL_standard"
+    },
+    {
+      "type": "standard",
+      "domain": "building",
+      "id": "CIBSE_guidelines"
+    },
+    {
+      "type": "standard",
+      "domain": "accessibility",
+      "id": "universal_design"
+    },
+    {
+      "type": "standard",
+      "domain": "health",
+      "id": "WHO_housing"
+    },
+    {
+      "type": "standard",
+      "domain": "education",
+      "id": "montessori_principles"
+    }
+  ],
+  "edges": [
+    {
+      "relationship": "needs",
+      "source": "ADHD",
+      "target": "low_distraction_space"
+    },
+    {
+      "relationship": "needs",
+      "source": "ADHD",
+      "target": "quiet_zone"
+    },
+    {
+      "relationship": "sensitive_to",
+      "source": "ADHD",
+      "target": "noise"
+    },
+    {
+      "relationship": "sensitive_to",
+      "source": "ADHD",
+      "target": "sensory_overload"
+    },
+    {
+      "relationship": "benefits_from",
+      "source": "ADHD",
+      "target": "activity_zones"
+    },
+    {
+      "relationship": "needs",
+      "source": "autism",
+      "target": "sensory_corner"
+    },
+    {
+      "relationship": "needs",
+      "source": "autism",
+      "target": "quiet_zone"
+    },
+    {
+      "relationship": "sensitive_to",
+      "source": "autism",
+      "target": "noise"
+    },
+    {
+      "relationship": "sensitive_to",
+      "source": "autism",
+      "target": "artificial_light"
+    },
+    {
+      "relationship": "risk_of",
+      "source": "autism",
+      "target": "sensory_overload"
+    },
+    {
+      "relationship": "risk_of",
+      "source": "elderly",
+      "target": "falls"
+    },
+    {
+      "relationship": "needs",
+      "source": "elderly",
+      "target": "task_lighting"
+    },
+    {
+      "relationship": "needs",
+      "source": "elderly",
+      "target": "wide_doorways"
+    },
+    {
+      "relationship": "needs",
+      "source": "children",
+      "target": "secured_furniture"
+    },
+    {
+      "relationship": "needs",
+      "source": "children",
+      "target": "safety_gates"
+    },
+    {
+      "relationship": "needs",
+      "source": "children",
+      "target": "window_cord_safety"
+    },
+    {
+      "relationship": "benefits_from",
+      "source": "children",
+      "target": "activity_zones"
+    },
+    {
+      "relationship": "benefits_from",
+      "source": "toddler",
+      "target": "floor_bed"
+    },
+    {
+      "relationship": "benefits_from",
+      "source": "toddler",
+      "target": "low_shelves"
+    },
+    {
+      "relationship": "benefits_from",
+      "source": "toddler",
+      "target": "activity_zones"
+    },
+    {
+      "relationship": "needs",
+      "source": "wheelchair_user",
+      "target": "wide_doorways"
+    },
+    {
+      "relationship": "needs",
+      "source": "wheelchair_user",
+      "target": "clear_pathways"
+    },
+    {
+      "relationship": "needs",
+      "source": "wheelchair_user",
+      "target": "low_shelves"
+    },
+    {
+      "relationship": "needs",
+      "source": "visual_impairment",
+      "target": "task_lighting"
+    },
+    {
+      "relationship": "needs",
+      "source": "visual_impairment",
+      "target": "light_paint"
+    },
+    {
+      "relationship": "sensitive_to",
+      "source": "visual_impairment",
+      "target": "poor_sleep"
+    },
+    {
+      "relationship": "needs",
+      "source": "motor_difficulties",
+      "target": "grab_rails"
+    },
+    {
+      "relationship": "needs",
+      "source": "motor_difficulties",
+      "target": "non_slip_flooring"
+    },
+    {
+      "relationship": "risk_of",
+      "source": "motor_difficulties",
+      "target": "falls"
+    },
+    {
+      "relationship": "deficiency_leads_to",
+      "source": "natural_light",
+      "target": "SAD"
+    },
+    {
+      "relationship": "improved_by",
+      "source": "ventilation",
+      "target": "ventilation_routine"
+    },
+    {
+      "relationship": "improved_by",
+      "source": "air_quality",
+      "target": "houseplants"
+    },
+    {
+      "relationship": "improved_by",
+      "source": "air_quality",
+      "target": "ventilation_routine"
+    },
+    {
+      "relationship": "causes",
+      "source": "noise",
+      "target": "stress"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "humidity",
+      "target": "ventilation_routine"
+    },
+    {
+      "relationship": "causes",
+      "source": "Irish_winter",
+      "target": "cloudy_weather"
+    },
+    {
+      "relationship": "increases",
+      "source": "Irish_winter",
+      "target": "humidity"
+    },
+    {
+      "relationship": "reduces",
+      "source": "cloudy_weather",
+      "target": "natural_light"
+    },
+    {
+      "relationship": "correlates_with",
+      "source": "cloudy_weather",
+      "target": "fatigue"
+    },
+    {
+      "relationship": "common_in",
+      "source": "rain",
+      "target": "Irish_winter"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "SAD",
+      "target": "mirror_placement"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "SAD",
+      "target": "light_paint"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "SAD",
+      "target": "task_lighting"
+    },
+    {
+      "relationship": "prevented_by",
+      "source": "falls",
+      "target": "clear_pathways"
+    },
+    {
+      "relationship": "prevented_by",
+      "source": "falls",
+      "target": "grab_rails"
+    },
+    {
+      "relationship": "prevented_by",
+      "source": "falls",
+      "target": "non_slip_flooring"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "stress",
+      "target": "quiet_zone"
+    },
+    {
+      "relationship": "mitigated_by",
+      "source": "fatigue",
+      "target": "natural_light"
+    },
+    {
+      "relationship": "causes",
+      "source": "sensory_overload",
+      "target": "stress"
+    },
+    {
+      "relationship": "caused_by",
+      "source": "poor_sleep",
+      "target": "artificial_light"
+    },
+    {
+      "relationship": "covers",
+      "source": "WELL_standard",
+      "target": "natural_light"
+    },
+    {
+      "relationship": "covers",
+      "source": "WELL_standard",
+      "target": "air_quality"
+    },
+    {
+      "relationship": "covers",
+      "source": "WELL_standard",
+      "target": "noise"
+    },
+    {
+      "relationship": "covers",
+      "source": "CIBSE_guidelines",
+      "target": "ventilation"
+    },
+    {
+      "relationship": "covers",
+      "source": "CIBSE_guidelines",
+      "target": "temperature"
+    },
+    {
+      "relationship": "covers",
+      "source": "universal_design",
+      "target": "wide_doorways"
+    },
+    {
+      "relationship": "covers",
+      "source": "universal_design",
+      "target": "clear_pathways"
+    },
+    {
+      "relationship": "covers",
+      "source": "WHO_housing",
+      "target": "falls"
+    },
+    {
+      "relationship": "covers",
+      "source": "WHO_housing",
+      "target": "humidity"
+    },
+    {
+      "relationship": "covers",
+      "source": "montessori_principles",
+      "target": "low_shelves"
+    },
+    {
+      "relationship": "covers",
+      "source": "montessori_principles",
+      "target": "floor_bed"
+    },
+    {
+      "relationship": "covers",
+      "source": "montessori_principles",
+      "target": "activity_zones"
+    }
+  ]
+}

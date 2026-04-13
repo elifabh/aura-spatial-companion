@@ -49,24 +49,61 @@ def get_relevant_knowledge(
 ) -> list[dict]:
     """
     Query the knowledge base for relevant context.
+    Combines ChromaDB vector search with Graph RAG relationship chains.
+    Profile-aware: enriches query with detected group keywords for better retrieval.
     Returns a list of dicts with 'text' and 'metadata' keys.
     """
     collection = get_collection()
-
-    # Check if collection has any documents
-    if collection.count() == 0:
-        return []
-
-    results = collection.query(
-        query_texts=[query],
-        n_results=min(n_results, collection.count()),
-    )
-
     knowledge = []
-    if results and results.get("documents"):
-        for i, doc in enumerate(results["documents"][0]):
-            meta = results["metadatas"][0][i] if results.get("metadatas") else {}
-            knowledge.append({"text": doc, "metadata": meta})
+
+    # Profile-aware query enrichment
+    enriched_query = query
+    if profile:
+        try:
+            from backend.core.group_rules import detect_groups
+            groups = detect_groups(profile)
+            group_keywords = {
+                "child": "child safety toddler",
+                "child_baby": "baby infant safety",
+                "elderly": "elderly falls prevention accessibility",
+                "disability_motor": "wheelchair mobility accessibility",
+                "disability_visual": "visual impairment contrast lighting",
+                "remote_worker": "ergonomic desk workspace",
+                "student": "study concentration focus",
+                "pregnant": "pregnancy safety ventilation",
+                "wellness": "meditation calm relaxation",
+                "fitness": "exercise space workout",
+            }
+            extras = [group_keywords.get(g, "") for g in groups if g in group_keywords]
+            if extras:
+                enriched_query = f"{query} {' '.join(extras)}"
+        except Exception:
+            pass
+
+    # 1. ChromaDB vector search
+    if collection.count() > 0:
+        results = collection.query(
+            query_texts=[enriched_query],
+            n_results=min(n_results, collection.count()),
+        )
+
+        if results and results.get("documents"):
+            for i, doc in enumerate(results["documents"][0]):
+                meta = results["metadatas"][0][i] if results.get("metadatas") else {}
+                knowledge.append({"text": doc, "metadata": meta})
+
+    # 2. Graph RAG relationship chains
+    try:
+        from backend.db.graph import get_graph_context
+        graph_chains = get_graph_context(query)
+        if graph_chains:
+            graph_text = "Knowledge Graph Relationships:\n" + "\n".join(graph_chains)
+            knowledge.append({
+                "text": graph_text,
+                "metadata": {"source": "knowledge_graph", "category": "graph_rag"}
+            })
+    except Exception as e:
+        print(f"[RAG] Graph context error: {e}")
 
     return knowledge
 
@@ -124,4 +161,4 @@ def seed_knowledge_base():
     for doc in initial_docs:
         add_knowledge(text=doc["text"], metadata=doc["metadata"])
 
-    print(f"✦  Seeded knowledge base with {len(initial_docs)} documents.")
+    print(f"[Aura] Seeded knowledge base with {len(initial_docs)} documents.")

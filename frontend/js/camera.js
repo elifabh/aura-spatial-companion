@@ -1,43 +1,52 @@
 /**
  * Aura Camera Module
- * Handles camera access, capture, and image upload.
+ * Full-screen camera with rear-facing capture, analysis,
+ * live video recording (MediaRecorder), and file upload.
  */
 
 const AuraCamera = (() => {
     let stream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+
     const video = () => document.getElementById('camera-feed');
     const canvas = () => document.getElementById('camera-canvas');
 
     async function start() {
+        if (stream) return;
         try {
             stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
                 },
             });
-            video().srcObject = stream;
+            const v = video();
+            if (v) v.srcObject = stream;
         } catch (error) {
             console.error('[Aura Camera] Access denied:', error);
-            AuraChat.addAuraMessage(
-                "I couldn't access your camera. Please check your browser permissions and try again."
-            );
         }
     }
 
     function stop() {
+        if (isRecording) stopRecording();
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
             stream = null;
+            const v = video();
+            if (v) v.srcObject = null;
         }
     }
 
-    function capture() {
+    async function capture() {
         const v = video();
         const c = canvas();
-        c.width = v.videoWidth;
-        c.height = v.videoHeight;
+        if (!v || !c) return null;
+
+        c.width = v.videoWidth || 1280;
+        c.height = v.videoHeight || 720;
         c.getContext('2d').drawImage(v, 0, 0);
 
         return new Promise(resolve => {
@@ -45,44 +54,60 @@ const AuraCamera = (() => {
         });
     }
 
-    async function captureAndAnalyse() {
-        const blob = await capture();
-        if (!blob) return;
+    // ── Video Recording ─────────────────────────────────
 
-        // Close camera modal
-        document.getElementById('camera-modal').classList.add('hidden');
-        stop();
+    function startRecording() {
+        if (!stream || isRecording) return;
 
-        // Show loading
-        AuraChat.addAuraMessage('Analysing your space… 🔍');
-        AuraChat.showTyping();
+        recordedChunks = [];
+        const mimeType = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('video/webm;codecs=vp9'))
+            ? 'video/webm;codecs=vp9'
+            : 'video/webm';
 
         try {
-            const result = await AuraAPI.analyseImage(blob);
-            AuraChat.hideTyping();
+            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+            };
+            mediaRecorder.start(1000);
+            isRecording = true;
+            console.log('[Aura Camera] Recording started');
 
-            let response = '';
-            if (result.description) {
-                response += `**What I see:** ${result.description}\n\n`;
+            const btn = document.getElementById('btn-record-video');
+            if (btn) {
+                btn.classList.add('recording');
+                const lbl = btn.querySelector('.record-label');
+                if (lbl) lbl.textContent = 'Stop ■';
             }
-            if (result.objects_detected && result.objects_detected.length) {
-                response += `**Objects spotted:** ${result.objects_detected.join(', ')}\n\n`;
-            }
-            if (result.suggestions && result.suggestions.length) {
-                response += '**My suggestions:**\n';
-                result.suggestions.forEach(s => {
-                    response += `• ${s}\n`;
-                });
-            }
-
-            AuraChat.addAuraMessage(response || "I've noted your space. Tell me more about what you'd like to improve!");
-        } catch (error) {
-            AuraChat.hideTyping();
-            AuraChat.addAuraMessage(
-                "I had trouble analysing that image. Make sure the backend is running and try again."
-            );
+        } catch (e) {
+            console.error('[Aura Camera] MediaRecorder error:', e);
         }
     }
 
-    return { start, stop, capture, captureAndAnalyse };
+    function stopRecording() {
+        return new Promise((resolve) => {
+            if (!mediaRecorder || !isRecording) { resolve(null); return; }
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                recordedChunks = [];
+                isRecording = false;
+                console.log('[Aura Camera] Recording stopped, size:', blob.size);
+                resolve(blob);
+
+                const btn = document.getElementById('btn-record-video');
+                if (btn) {
+                    btn.classList.remove('recording');
+                    const lbl = btn.querySelector('.record-label');
+                    if (lbl) lbl.textContent = '● Record';
+                }
+            };
+            mediaRecorder.stop();
+        });
+    }
+
+    function isCurrentlyRecording() {
+        return isRecording;
+    }
+
+    return { start, stop, capture, startRecording, stopRecording, isCurrentlyRecording };
 })();

@@ -58,11 +58,11 @@ async def search_nearby(lat: float, lon: float, query: str = "park") -> list[dic
             response = await client.get(
                 f"{OPENSTREETMAP_NOMINATIM_URL}/search",
                 params={
-                    "q": query,
+                    "q": f"{query} near {lat},{lon}",
                     "format": "json",
-                    "limit": 5,
-                    "viewbox": f"{lon-0.05},{lat+0.05},{lon+0.05},{lat-0.05}",
-                    "bounded": 1,
+                    "limit": 10,
+                    "viewbox": f"{lon-0.02},{lat+0.02},{lon+0.02},{lat-0.02}",
+                    "bounded": 0,
                 },
                 headers={
                     "User-Agent": "Aura-Spatial-Companion/0.1",

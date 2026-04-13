@@ -2,142 +2,542 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <meta name="description" content="Aura — AI-powered spatial companion. Live better with what you have.">
     <meta name="theme-color" content="#0f0f1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Aura — Spatial Companion</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+    <link rel="icon" type="image/png" href="/assets/icons/icon-512.png">
 </head>
 <body>
-    <!-- ── App Shell ─────────────────────────────── -->
-    <div id="app">
 
-        <!-- Header -->
-        <header id="header" class="app-header">
-            <div class="header-left">
-                <span class="logo">✦</span>
-                <h1>Aura</h1>
-            </div>
-            <div class="header-right">
-                <button id="btn-camera" class="icon-btn" aria-label="Open camera">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                </button>
-                <button id="btn-profile" class="icon-btn" aria-label="Profile">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                </button>
-            </div>
-        </header>
+<!-- SPLASH SCREEN -->
+<div id="splash-screen" class="splash-screen">
+    <div class="splash-content">
+        <img src="/assets/icons/icon-512.png" alt="Aura" class="splash-logo pulse-animation">
+        <h1 class="splash-title">Aura</h1>
+        <p class="splash-tagline">Your space, your way</p>
+    </div>
+    <div class="splash-footer">
+        <button id="btn-get-started" class="btn-primary btn-full splash-btn hidden">Get Started</button>
+    </div>
+</div>
 
-        <!-- Main Chat Area -->
-        <main id="chat-area" class="chat-area">
-            <div id="messages" class="messages">
-                <!-- Welcome message -->
-                <div class="message aura-message">
-                    <div class="message-avatar">✦</div>
-                    <div class="message-content">
-                        <p>Hello! I'm <strong>Aura</strong>, your spatial companion.</p>
-                        <p>I help you live better with what you already have. Show me your space or tell me about it — I'll share personalised ideas to make it work better for you.</p>
-                        <div class="quick-actions">
-                            <button class="chip" data-action="scan">📷 Scan my space</button>
-                            <button class="chip" data-action="tips">💡 Quick tips</button>
-                            <button class="chip" data-action="weather">🌤️ Weather check</button>
-                        </div>
+<div id="app">
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCREEN 1 — HOME                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="screen-home" class="screen active">
+        <div class="screen-scroll">
+
+            <!-- Header -->
+            <div class="home-header">
+                <div class="home-header-top">
+                    <div class="aura-brand">
+                        <img src="/assets/icons/icon-512.png" class="aura-logo-img" alt="Aura">
+                        <span class="aura-wordmark">Aura</span>
+                    </div>
+                    <div class="header-time" id="header-time"></div>
+                </div>
+                <h1 class="home-greeting" id="home-greeting">Good evening ✦</h1>
+                <p class="home-subtitle">Let's make your space feel better today.</p>
+            </div>
+
+            <!-- Weather Widget -->
+            <div class="card glass-card weather-card" id="weather-widget">
+                <div class="weather-main">
+                    <div class="weather-art" id="weather-art">☀️</div>
+                    <div class="weather-info">
+                        <span class="temp-value" id="weather-temp">--°</span>
+                        <span class="temp-label" id="weather-desc">Loading…</span>
                     </div>
                 </div>
-            </div>
-        </main>
-
-        <!-- Input Bar -->
-        <footer id="input-bar" class="input-bar">
-            <div class="input-wrapper">
-                <input
-                    type="text"
-                    id="message-input"
-                    placeholder="Ask Aura anything..."
-                    autocomplete="off"
-                    aria-label="Type a message"
-                >
-                <button id="btn-send" class="send-btn" aria-label="Send message">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"/>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                </button>
-            </div>
-        </footer>
-
-        <!-- Camera Modal -->
-        <div id="camera-modal" class="modal hidden">
-            <div class="modal-overlay"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Scan Your Space</h2>
-                    <button id="btn-close-camera" class="icon-btn" aria-label="Close camera">✕</button>
+                <div class="weather-details">
+                    <div class="weather-detail">
+                        <span class="detail-icon">💧</span>
+                        <span id="weather-humidity">--%</span>
+                    </div>
+                    <div class="weather-detail">
+                        <span class="detail-icon">🌅</span>
+                        <span id="weather-sun">--</span>
+                    </div>
                 </div>
-                <div class="camera-container">
-                    <video id="camera-feed" autoplay playsinline></video>
-                    <canvas id="camera-canvas" class="hidden"></canvas>
+                <div class="weather-insight" id="weather-insight">
+                    Checking local conditions…
                 </div>
-                <div class="camera-controls">
-                    <button id="btn-capture" class="capture-btn" aria-label="Capture photo">
-                        <div class="capture-ring"></div>
+            </div>
+
+            <!-- Mood Selector -->
+            <div class="section">
+                <h2 class="section-title">How are you feeling today?</h2>
+                <div class="mood-grid" id="mood-grid">
+                    <button class="mood-btn" data-mood="energetic">
+                        <span class="mood-emoji">⚡</span>
+                        <span class="mood-label">Energetic</span>
+                    </button>
+                    <button class="mood-btn" data-mood="calm">
+                        <span class="mood-emoji">🧘</span>
+                        <span class="mood-label">Calm</span>
+                    </button>
+                    <button class="mood-btn" data-mood="tired">
+                        <span class="mood-emoji">😴</span>
+                        <span class="mood-label">Tired</span>
+                    </button>
+                    <button class="mood-btn" data-mood="stressed">
+                        <span class="mood-emoji">😤</span>
+                        <span class="mood-label">Stressed</span>
+                    </button>
+                    <button class="mood-btn" data-mood="creative">
+                        <span class="mood-emoji">🎨</span>
+                        <span class="mood-label">Creative</span>
+                    </button>
+                    <button class="mood-btn" data-mood="anxious">
+                        <span class="mood-emoji">😰</span>
+                        <span class="mood-label">Anxious</span>
+                    </button>
+                    <button class="mood-btn" data-mood="sad">
+                        <span class="mood-emoji">😢</span>
+                        <span class="mood-label">Sad</span>
+                    </button>
+                    <button class="mood-btn" data-mood="happy">
+                        <span class="mood-emoji">🤗</span>
+                        <span class="mood-label">Happy</span>
+                    </button>
+                    <button class="mood-btn" data-mood="angry">
+                        <span class="mood-emoji">😠</span>
+                        <span class="mood-label">Angry</span>
+                    </button>
+                    <button class="mood-btn" data-mood="focused">
+                        <span class="mood-emoji">🎯</span>
+                        <span class="mood-label">Focused</span>
                     </button>
                 </div>
             </div>
+
+            <!-- Mood Insight Card (hidden until 7+ moods) -->
+            <div class="card glass-card mood-insight-card" id="home-mood-insight" style="display:none">
+                <div class="insight-header">
+                    <span class="insight-icon">🧠</span>
+                    <span class="insight-title">Pattern Detected</span>
+                </div>
+                <p class="insight-text" id="mood-insight-text">Loading insight…</p>
+            </div>
+
+            <!-- Mood Activity Suggestions (populated by JS when mood is selected) -->
+            <div id="mood-activities-container" class="mood-activities-section" style="display:none"></div>
+
+            <!-- Lifestyle Insights (Time/Weather) -->
+            <div class="section" id="lifestyle-section" style="display:none">
+                <div class="section-header">
+                    <h2 class="section-title">Right Now</h2>
+                </div>
+                <div class="tips-carousel" id="lifestyle-carousel">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Outdoor Recommendation Card -->
+            <div class="card glass-card outdoor-card" id="outdoor-card" style="display:none">
+                <div class="outdoor-card-header">
+                    <span class="outdoor-icon">🌳</span>
+                    <div class="outdoor-title-group">
+                        <span class="outdoor-title">Go Outside Today</span>
+                        <span class="outdoor-subtitle" id="outdoor-subtitle">Based on your profile &amp; weather</span>
+                    </div>
+                </div>
+                <div id="outdoor-places" class="outdoor-places"></div>
+            </div>
+
+            <!-- Recent Tips Carousel -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Tips for you</h2>
+                    <button class="see-all-btn" id="btn-see-all-tips">See all →</button>
+                </div>
+                <div class="tips-carousel" id="tips-carousel">
+                    <div class="tip-card glass-card">
+                        <div class="tip-icon">💡</div>
+                        <h3>Natural Light</h3>
+                        <p>Place mirrors opposite windows to double the light in dark rooms.</p>
+                    </div>
+                    <div class="tip-card glass-card">
+                        <div class="tip-icon">🌿</div>
+                        <h3>Clean Air</h3>
+                        <p>Open windows for 15 minutes — even in Irish weather it helps greatly.</p>
+                    </div>
+                    <div class="tip-card glass-card">
+                        <div class="tip-icon">🛡️</div>
+                        <h3>Child Safety</h3>
+                        <p>Secure tall furniture to walls with anti-tip straps you may already have.</p>
+                    </div>
+                    <div class="tip-card glass-card">
+                        <div class="tip-icon">♿</div>
+                        <h3>Easy Reach</h3>
+                        <p>Move daily-use items to waist-height shelves for easier access.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-spacer"></div>
         </div>
 
-        <!-- Profile Modal -->
-        <div id="profile-modal" class="modal hidden">
-            <div class="modal-overlay"></div>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Your Profile</h2>
-                    <button id="btn-close-profile" class="icon-btn" aria-label="Close profile">✕</button>
+        <!-- Floating Chat Button -->
+        <button class="fab" id="fab-chat" aria-label="Open chat with Aura">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+        </button>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCREEN 2 — SCAN                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="screen-scan" class="screen">
+        <div class="scan-container">
+            <!-- Camera View -->
+            <div class="camera-viewfinder">
+                <video id="camera-feed" autoplay playsinline></video>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+
+                <!-- Camera Overlay -->
+                <div class="camera-overlay">
+                    <div class="scan-header">
+                        <span class="scan-title">Scan Your Space</span>
+                        <div class="scan-badge">
+                            <span class="pulse-dot"></span>
+                            LIVE
+                        </div>
+                    </div>
+
+                    <!-- Compass Badge (visible when compass active) -->
+                    <div class="compass-badge" id="compass-badge" style="display:none">
+                        <span class="compass-arrow">🧭</span>
+                        <span class="compass-direction">--</span>
+                        <span class="compass-degrees">--°</span>
+                    </div>
+
+                    <div class="scan-corners">
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
+                    </div>
                 </div>
-                <form id="profile-form" class="profile-form">
-                    <div class="form-group">
-                        <label for="household">Household Members</label>
-                        <input type="text" id="household" placeholder="e.g. toddler, elderly parent">
+
+                <!-- Capture Controls -->
+                <div class="capture-controls">
+                    <button class="capture-btn" id="btn-capture" aria-label="Capture photo">
+                        <div class="capture-ring">
+                            <div class="capture-dot"></div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Video Controls -->
+                <div class="video-controls" id="video-controls">
+                    <div class="video-mode-row">
+                        <button class="video-action-btn" id="btn-record-video" aria-label="Record video">
+                            <span class="record-icon">●</span>
+                            <span class="record-label">Record</span>
+                        </button>
+                        <label class="video-action-btn upload-btn-label" for="video-file-input" aria-label="Upload video">
+                            <span>📁</span>
+                            <span>Upload</span>
+                        </label>
+                        <input type="file" id="video-file-input" accept="video/*" class="hidden">
                     </div>
-                    <div class="form-group">
-                        <label for="mobility">Mobility Notes</label>
-                        <input type="text" id="mobility" placeholder="e.g. uses walking aid">
+                </div>
+            </div>
+
+            <!-- Analysis Results (slides up) -->
+            <div class="analysis-results hidden" id="analysis-results">
+                <div class="results-handle"></div>
+                <div class="results-header">
+                    <h2><img src="/assets/icons/icon-512.png" class="aura-logo-xs" alt=""> Space Analysis</h2>
+                    <button class="icon-btn-sm" id="btn-close-results" aria-label="Close results">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="results-body" id="results-body">
+                    <div class="room-label-row" id="room-label-row" style="display:none; margin-bottom: 12px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px;">
+                        <input type="text" id="room-label-input" placeholder="Name this room (e.g. Living Room)" class="room-label-field" style="flex:1;">
+                        <button class="room-label-save" id="btn-save-room-label">Save 💾</button>
                     </div>
-                    <div class="form-group">
-                        <label for="interests">Interests</label>
-                        <input type="text" id="interests" placeholder="e.g. gardening, reading">
+                    <div class="result-section score-section" id="score-section" style="display: none;">
+                        <h3>Space Score</h3>
+                        <p class="diff-text" id="score-diff"></p>
+                        <div class="score-grid">
+                            <div class="circular-chart-container">
+                                <svg viewBox="0 0 36 36" class="circular-chart">
+                                  <path class="circle-bg"
+                                    d="M18 2.0845
+                                      a 15.9155 15.9155 0 0 1 0 31.831
+                                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  />
+                                  <path class="circle" id="score-ring"
+                                    stroke-dasharray="0, 100"
+                                    d="M18 2.0845
+                                      a 15.9155 15.9155 0 0 1 0 31.831
+                                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  />
+                                  <text x="18" y="21" class="percentage" id="score-number">0</text>
+                                </svg>
+                            </div>
+                            <div class="score-breakdown">
+                                <div><span class="score-dot c-light"></span> Light: <strong id="score-light">-</strong></div>
+                                <div><span class="score-dot c-air"></span> Air: <strong id="score-air">-</strong></div>
+                                <div><span class="score-dot c-safety"></span> Safety: <strong id="score-safety">-</strong></div>
+                                <div><span class="score-dot c-comfort"></span> Comfort: <strong id="score-comfort">-</strong></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="space-type">Space Type</label>
-                        <select id="space-type">
-                            <option value="">Select...</option>
-                            <option value="apartment">Apartment</option>
-                            <option value="house">House</option>
-                            <option value="studio">Studio</option>
-                            <option value="shared">Shared accommodation</option>
-                        </select>
+                    <div class="result-section mt-sm">
+                        <h3>What I see</h3>
+                        <p id="result-description">Analysing…</p>
                     </div>
-                    <button type="submit" class="btn-primary">Save Profile</button>
-                </form>
+                    <div class="result-section">
+                        <h3>Objects detected</h3>
+                        <div class="result-tags" id="result-objects"></div>
+                    </div>
+                    <div class="result-section">
+                        <h3>My suggestions</h3>
+                        <div class="suggestions-list" id="result-suggestions"></div>
+                    </div>
+                </div>
             </div>
         </div>
+    </section>
 
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCREEN 3 — TIPS                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="screen-tips" class="screen">
+        <div class="screen-scroll">
+            <!-- Seasonal Banner (Oct-Mar only) -->
+            <div class="seasonal-banner" id="seasonal-banner" style="display:none">
+                <span class="seasonal-icon">🌬️</span>
+                <div class="seasonal-text">
+                    <strong>Irish winter mode</strong>
+                    <span>Focusing on light &amp; warmth</span>
+                </div>
+            </div>
+
+            <div class="tips-header">
+                <h1>Your Tips</h1>
+                <p>Personalised for your space & household</p>
+            </div>
+
+            <!-- Filter Chips -->
+            <div class="filter-chips" id="filter-chips">
+                <button class="filter-chip active" data-filter="all">All</button>
+                <button class="filter-chip" data-filter="safety">🛡️ Safety</button>
+                <button class="filter-chip" data-filter="lighting">☀️ Light</button>
+                <button class="filter-chip" data-filter="air_quality">🌿 Air</button>
+                <button class="filter-chip" data-filter="comfort">🛋️ Comfort</button>
+                <button class="filter-chip" data-filter="activity">🎯 Activity</button>
+                <button class="filter-chip" data-filter="accessibility">♿ Access</button>
+            </div>
+
+            <!-- Tips List -->
+            <div class="tips-list" id="tips-list">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="bottom-spacer"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SCREEN 4 — PROFILE                         -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section id="screen-profile" class="screen">
+        <div class="screen-scroll">
+            <div class="profile-header">
+                <div class="avatar" id="profile-avatar">E</div>
+                <h1 class="profile-name" id="profile-name">Aura User</h1>
+                <p class="profile-subtitle">Your spatial profile</p>
+                <div id="accuracy-badge-container" style="margin-top: 10px; display: none;">
+                    <span class="accuracy-badge" id="accuracy-badge" style="background: rgba(147, 112, 219, 0.2); color: #9370DB; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; display: inline-block;">
+                        ✨ Aura accuracy for you: <span id="accuracy-score">--%</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="profile-sections">
+                <!-- Household Members -->
+                <h3 class="ios-section-title">👨‍👩‍👧 Household Members</h3>
+                <div class="household-members" id="household-members">
+                    <!-- Dynamic person cards go here -->
+                </div>
+                <button class="btn-add-person" id="btn-add-person">
+                    <span>＋</span> Add person
+                </button>
+                <div class="add-person-form" id="add-person-form">
+                    <input type="text" id="person-name" placeholder="Name (e.g. Sarah)">
+                    <input type="text" id="person-age" placeholder="Age (e.g. 34 or 1.5)">
+                    <input type="text" id="person-notes" placeholder="Notes (e.g. uses wheelchair)">
+                    <div class="add-person-actions">
+                        <button class="btn-cancel-person" id="btn-cancel-person">Cancel</button>
+                        <button class="btn-confirm-person" id="btn-confirm-person">Add</button>
+                    </div>
+                </div>
+
+                <div class="ios-list" style="margin-top:var(--sp-md)">
+                    <div class="ios-row">
+                        <span class="ios-icon">💜</span>
+                        <div class="ios-label">Interests</div>
+                        <input type="text" id="input-interests" class="ios-input" placeholder="e.g. reading, crafts">
+                    </div>
+                </div>
+
+                <h3 class="ios-section-title">Home Type</h3>
+                <div class="space-type-grid" id="space-type-grid" style="padding: 0 0 16px 0;">
+                    <button class="space-type-btn" data-type="apartment">🏢 Apartment</button>
+                    <button class="space-type-btn" data-type="house">🏡 House</button>
+                    <button class="space-type-btn" data-type="studio">🛏️ Studio</button>
+                    <button class="space-type-btn" data-type="shared">🤝 Shared</button>
+                </div>
+
+                <!-- Accessibility Section -->
+                <h3 class="ios-section-title">♿ Accessibility &amp; Needs</h3>
+                <p class="accessibility-note">Select any that apply — Aura adapts silently.</p>
+                <div class="accessibility-grid" id="accessibility-grid">
+                    <label class="a11y-chip"><input type="checkbox" value="Wheelchair user"><span>♿ Wheelchair user</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="Mobility Aid User"><span>🚶 Mobility Aid User</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="Visual impairment"><span>👁️ Visual impairment</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="Hearing impairment"><span>🦻 Hearing impairment</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="Motor difficulties"><span>🤲 Motor difficulties</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="ADHD"><span>🧠 ADHD</span></label>
+                    <label class="a11y-chip"><input type="checkbox" value="Autism"><span>💜 Autism</span></label>
+                    <label class="a11y-chip a11y-other"><input type="checkbox" value="Other" id="a11y-other-check"><span>✏️ Other</span></label>
+                </div>
+                <input type="text" id="a11y-other-text" class="ios-input" placeholder="Describe other need…" style="display:none; margin-top:var(--sp-xs)">
+
+                <h3 class="ios-section-title">Preferences</h3>
+                <div class="ios-list">
+                    <div class="ios-row">
+                        <span class="ios-icon">✨</span>
+                        <div class="ios-label" style="flex:1">Proactive tips</div>
+                        <label class="toggle">
+                            <input type="checkbox" id="pref-proactive" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="ios-row">
+                        <span class="ios-icon">🌤️</span>
+                        <div class="ios-label" style="flex:1">Weather-aware</div>
+                        <label class="toggle">
+                            <input type="checkbox" id="pref-weather" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="ios-row">
+                        <span class="ios-icon">🛡️</span>
+                        <div class="ios-label" style="flex:1">Safety priority</div>
+                        <label class="toggle">
+                            <input type="checkbox" id="pref-safety">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn-primary btn-full ios-btn" id="btn-save-profile">Save Profile</button>
+            </div>
+
+            <div class="bottom-spacer"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- CHAT BOTTOM SHEET                          -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="chat-sheet" id="chat-sheet">
+        <div class="chat-sheet-overlay" id="chat-overlay"></div>
+        <div class="chat-sheet-container" id="chat-container">
+            <div class="chat-sheet-handle"></div>
+            <div class="chat-sheet-header">
+                <div class="chat-header-left">
+                    <img src="/assets/icons/icon-512.png" class="aura-logo-img-sm" alt="Aura">
+                    <div>
+                        <h3>Chat with Aura</h3>
+                        <span class="chat-status">Online · Local AI</span>
+                    </div>
+                </div>
+                <button class="icon-btn-sm" id="btn-close-chat" aria-label="Close chat">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg msg-aura">
+                    <div class="msg-avatar"><img src="/assets/icons/icon-512.png" alt="Aura"></div>
+                    <div class="msg-bubble">
+                        <p>Hello! I'm Aura, your spatial companion. ✦</p>
+                        <p>Ask me anything about improving your living space — without buying new things.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-bar">
+                <button class="icon-btn-sm" id="btn-chat-mic" aria-label="Voice input" style="margin-right: 4px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </button>
+                <input type="text" id="chat-input" placeholder="Ask Aura anything…" autocomplete="off">
+                <button class="chat-send-btn" id="btn-chat-send" aria-label="Send message">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <script src="/js/api.js"></script>
-    <script src="/js/camera.js"></script>
-    <script src="/js/chat.js"></script>
-    <script src="/js/app.js"></script>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- BOTTOM NAVIGATION                          -->
+    <!-- ═══════════════════════════════════════════ -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="nav-item active" data-screen="home" aria-label="Home">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Home</span>
+        </button>
+        <button class="nav-item" data-screen="scan" aria-label="Scan">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span>Scan</span>
+        </button>
+        <button class="nav-item" data-screen="tips" aria-label="Tips">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/>
+                <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+            </svg>
+            <span>Tips</span>
+        </button>
+        <button class="nav-item" data-screen="profile" aria-label="Profile">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>Profile</span>
+        </button>
+    </nav>
+
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/camera.js"></script>
+<script src="/js/orientation.js"></script>
+<script src="/js/chat.js"></script>
+<script src="/js/app.js"></script>
+
 </body>
 </html>
