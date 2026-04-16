@@ -17,6 +17,15 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 data/chroma/
+data/chroma_test/
+*.pkl
+
+# ── Knowledge documents (large binary assets) ─
+backend/knowledge/*.pdf
+backend/knowledge/*.csv
+
+# ── Claude Code local settings ───────────────
+.claude/
 
 # ── IDE ──────────────────────────────────────
 .vscode/
