@@ -71,6 +71,16 @@ def seed_demo_profiles():
             "interests": ["music", "cooking", "structure"],
             "concerns": "organising, clear pathways",
         },
+        "ms_murphy": {
+            "name": "Ms. Murphy",
+            "age": 62,
+            "location": "Dublin, Ireland",
+            "space_type": "shared",
+            "household_members": [],
+            "accessibility_needs": [],
+            "interests": ["education", "child engagement", "classroom design"],
+            "concerns": "learning environment, child focus, ADHD support",
+        },
     }
 
     for user_id, profile_data in profiles.items():
@@ -273,6 +283,128 @@ def train_rocket_on_demo_data():
     print("[Seed] Done! ROCKET classifier trained on demo data.")
 
 
+def seed_demo_zones():
+    """Pre-load demo zone analyses for Sarah, Seamus, and Ms. Murphy."""
+    from backend.db.sqlite import log_zone_analysis
+
+    # ── Sarah — toddler safety zones ─────────────────
+    sarah_zones = [
+        {
+            "id": "zone_1", "label": "Coffee Table Hazard",
+            "type": "danger", "color": "red",
+            "description": "Low coffee table with sharp corners sits at Cian's head height. High collision risk during active play.",
+            "recommendation": "Move table to the wall temporarily or pad all corners with folded towels held with elastic bands.",
+            "priority": 1,
+            "x_percent": 28.0, "y_percent": 42.0, "width_percent": 26.0, "height_percent": 18.0,
+        },
+        {
+            "id": "zone_2", "label": "Exposed Socket",
+            "type": "danger", "color": "red",
+            "description": "Electrical outlet at floor level — within easy reach of a crawling or walking toddler.",
+            "recommendation": "Block access by pushing furniture in front, or cover with tape until socket protectors are purchased.",
+            "priority": 2,
+            "x_percent": 5.0, "y_percent": 72.0, "width_percent": 10.0, "height_percent": 12.0,
+        },
+        {
+            "id": "zone_3", "label": "Safe Play Zone",
+            "type": "opportunity", "color": "green",
+            "description": "Open floor area with soft rug — ideal supervised play space for Cian.",
+            "recommendation": "Designate this as the primary play zone; contain toys here to reduce scatter hazards elsewhere.",
+            "priority": 3,
+            "x_percent": 14.0, "y_percent": 28.0, "width_percent": 36.0, "height_percent": 32.0,
+        },
+        {
+            "id": "zone_4", "label": "Window Cord Risk",
+            "type": "caution", "color": "yellow",
+            "description": "Dangling blind cord near window — strangulation risk for young children.",
+            "recommendation": "Tie the cord up high around a hook screwed above window frame level.",
+            "priority": 4,
+            "x_percent": 70.0, "y_percent": 8.0, "width_percent": 12.0, "height_percent": 38.0,
+        },
+    ]
+    log_zone_analysis("sarah", sarah_zones, 58,
+                      "Cian's safety is the priority — fix the table corners and socket before anything else.")
+    print("[Seed] Loaded zone analysis for sarah")
+
+    # ── Seamus — fall prevention zones ───────────────
+    seamus_zones = [
+        {
+            "id": "zone_1", "label": "Loose Rug — Fall Risk",
+            "type": "danger", "color": "red",
+            "description": "Unsecured area rug in the main walkway — high fall risk for someone with motor difficulties.",
+            "recommendation": "Remove the rug entirely, or secure every edge with double-sided carpet tape.",
+            "priority": 1,
+            "x_percent": 20.0, "y_percent": 48.0, "width_percent": 32.0, "height_percent": 22.0,
+        },
+        {
+            "id": "zone_2", "label": "Dim Corridor",
+            "type": "caution", "color": "yellow",
+            "description": "Low ambient light in the transit area between rooms — dangerous at night.",
+            "recommendation": "Place a battery-powered motion-sensor light low on the wall to illuminate night-time movement.",
+            "priority": 2,
+            "x_percent": 62.0, "y_percent": 18.0, "width_percent": 20.0, "height_percent": 50.0,
+        },
+        {
+            "id": "zone_3", "label": "Grab Rail Opportunity",
+            "type": "suggestion", "color": "blue",
+            "description": "Bare wall beside the armchair — ideal location for a grab rail to assist standing.",
+            "recommendation": "Contact ALONE Ireland or the HSE Community Support Scheme — grab rails are often provided free of charge.",
+            "priority": 3,
+            "x_percent": 5.0, "y_percent": 28.0, "width_percent": 14.0, "height_percent": 42.0,
+        },
+        {
+            "id": "zone_4", "label": "Clear Central Path",
+            "type": "opportunity", "color": "green",
+            "description": "Wide central corridor between furniture — well maintained for mobility aid clearance.",
+            "recommendation": "Keep this route always clear — never place bags, shoes, or power cables here.",
+            "priority": 4,
+            "x_percent": 35.0, "y_percent": 18.0, "width_percent": 26.0, "height_percent": 62.0,
+        },
+    ]
+    log_zone_analysis("seamus", seamus_zones, 62,
+                      "Fall prevention is essential — the rug and corridor lighting should be addressed first.")
+    print("[Seed] Loaded zone analysis for seamus")
+
+    # ── Ms. Murphy — classroom engagement zones ───────
+    ms_murphy_zones = [
+        {
+            "id": "zone_1", "label": "Whiteboard Glare",
+            "type": "danger", "color": "red",
+            "description": "Morning sunlight reflects directly off the whiteboard, causing eye strain and reducing visibility for students.",
+            "recommendation": "Angle the whiteboard 10-15° away from the window, or fit a simple roller blind for the morning block.",
+            "priority": 1,
+            "x_percent": 8.0, "y_percent": 5.0, "width_percent": 42.0, "height_percent": 38.0,
+        },
+        {
+            "id": "zone_2", "label": "High Distraction Corner",
+            "type": "caution", "color": "yellow",
+            "description": "Colourful wall displays and a window view in this corner distract ADHD-profile learners.",
+            "recommendation": "Seat ADHD students away from this corner; reserve this spot for free-choice activity time only.",
+            "priority": 2,
+            "x_percent": 64.0, "y_percent": 8.0, "width_percent": 30.0, "height_percent": 46.0,
+        },
+        {
+            "id": "zone_3", "label": "Calm Focus Corner",
+            "type": "opportunity", "color": "green",
+            "description": "Quiet low-clutter corner — well-suited as a calming station for any child who needs to self-regulate.",
+            "recommendation": "Designate as the 'calm corner' with headphones and a visual timer — make it accessible to all, not just one child.",
+            "priority": 3,
+            "x_percent": 4.0, "y_percent": 50.0, "width_percent": 22.0, "height_percent": 36.0,
+        },
+        {
+            "id": "zone_4", "label": "Unused Floor Space",
+            "type": "suggestion", "color": "blue",
+            "description": "Central floor area between desk clusters is under-utilised for group or movement activities.",
+            "recommendation": "Mark a carpet gathering area using coloured tape lines — a clear visual boundary helps young children transition quickly.",
+            "priority": 4,
+            "x_percent": 30.0, "y_percent": 38.0, "width_percent": 36.0, "height_percent": 36.0,
+        },
+    ]
+    log_zone_analysis("ms_murphy", ms_murphy_zones, 71,
+                      "Layout is functional — fix the whiteboard glare and distraction corner to improve focus for all learners.")
+    print("[Seed] Loaded zone analysis for ms_murphy")
+
+
 def seed_all():
     """Run all seeding steps."""
     print("[Seed] Starting demo data seeding...")
@@ -280,6 +412,7 @@ def seed_all():
     seed_conversations()
     seed_synthetic_timeseries()
     train_rocket_on_demo_data()
+    seed_demo_zones()
     print("[Seed] Done! All demo data seeded successfully!")
 
 if __name__ == "__main__":

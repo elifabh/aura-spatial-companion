@@ -156,5 +156,29 @@ const AuraAPI = (() => {
         async getNearbyOutdoor(lat, lon, userId = 'default') {
             return request(`/outdoor/nearby?lat=${lat}&lon=${lon}&user_id=${userId}`);
         },
+
+        /** Run zone analysis on an image blob — returns zones with coordinates and recommendations. */
+        async analyseZones(imageBlob, userId = 'default') {
+            const formData = new FormData();
+            formData.append('image', imageBlob, 'capture.jpg');
+
+            const url = `${BASE_URL}/camera/zone-analysis?user_id=${encodeURIComponent(userId)}`;
+            const response = await fetch(url, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error(`Zone analysis error: ${response.status}`);
+            return response.json();
+        },
+
+        /** Fetch pre-seeded demo zones for a profile without needing camera access. */
+        async getDemoZones(userId) {
+            return request(`/camera/demo-zones/${encodeURIComponent(userId)}`);
+        },
+
+        /** Mark a suggestion as completed — awards Aura Points and checks badges. */
+        async completeSuggestion(suggestionText, userId = 'default') {
+            return request('/gamification/complete', {
+                method: 'POST',
+                body: JSON.stringify({ user_id: userId, suggestion_text: suggestionText }),
+            });
+        },
     };
 })();

@@ -124,8 +124,8 @@
             <!-- Mood Insight Card (hidden until 7+ moods) -->
             <div class="card glass-card mood-insight-card" id="home-mood-insight" style="display:none">
                 <div class="insight-header">
-                    <span class="insight-icon">🧠</span>
-                    <span class="insight-title">Pattern Detected</span>
+                    <span class="insight-icon">✦</span>
+                    <span class="insight-title">Your Space Insights</span>
                 </div>
                 <p class="insight-text" id="mood-insight-text">Loading insight…</p>
             </div>
@@ -201,10 +201,51 @@
     <!-- ═══════════════════════════════════════════ -->
     <section id="screen-scan" class="screen">
         <div class="scan-container">
+
+            <!-- Demo Profile Selector Bar -->
+            <div class="demo-profile-bar" id="demo-profile-bar">
+                <span class="demo-bar-label">Demo</span>
+                <div class="demo-chips">
+                    <button class="demo-chip" data-profile="sarah">
+                        <span class="demo-chip-avatar">S</span>Sarah
+                    </button>
+                    <button class="demo-chip" data-profile="seamus">
+                        <span class="demo-chip-avatar">S</span>Seamus
+                    </button>
+                    <button class="demo-chip" data-profile="ms_murphy">
+                        <span class="demo-chip-avatar">M</span>Ms. Murphy
+                    </button>
+                </div>
+            </div>
+
             <!-- Camera View -->
             <div class="camera-viewfinder">
                 <video id="camera-feed" autoplay playsinline></video>
                 <canvas id="camera-canvas" class="hidden"></canvas>
+
+                <!-- Zone Overlay Canvas (drawn on top after capture) -->
+                <canvas id="zone-overlay" class="zone-overlay" aria-hidden="true"></canvas>
+
+                <!-- Zone Detail Card (appears on zone tap) -->
+                <div id="zone-detail-card" class="zone-detail-card hidden">
+                    <div class="zone-detail-header">
+                        <span id="zone-detail-icon" class="zone-detail-icon">●</span>
+                        <h3 id="zone-detail-label" class="zone-detail-label">Zone</h3>
+                        <button id="btn-zone-detail-close" class="zone-detail-close" aria-label="Close">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                    <p id="zone-detail-description" class="zone-detail-description"></p>
+                    <div class="zone-detail-rec">
+                        <span>💡</span>
+                        <p id="zone-detail-recommendation"></p>
+                    </div>
+                </div>
+
+                <!-- Clear Zone Overlay Button -->
+                <button id="btn-clear-zones" class="zone-clear-btn hidden" aria-label="Close zone view" title="Back to live camera">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
 
                 <!-- Camera Overlay -->
                 <div class="camera-overlay">
@@ -254,6 +295,40 @@
                         <input type="file" id="video-file-input" accept="video/*" class="hidden">
                     </div>
                 </div>
+
+                <!-- Demo Scan Button (shown when demo profile selected) -->
+                <div class="demo-scan-action hidden" id="demo-scan-action">
+                    <div class="demo-scan-profile-pill" id="demo-scan-profile-pill">
+                        <span class="demo-scan-avatar" id="demo-scan-avatar">S</span>
+                        <span id="demo-scan-name">Sarah</span>
+                        <span class="demo-scan-subtitle" id="demo-scan-subtitle">Young mum · Cork</span>
+                    </div>
+                    <button class="btn-demo-scan" id="btn-demo-scan" aria-label="Run demo scan">
+                        ✦ Demo Scan
+                    </button>
+                </div>
+            </div>
+
+            <!-- Zone Report (below camera, scrollable) -->
+            <div id="zone-report" class="zone-report hidden">
+                <div class="zone-report-header">
+                    <div>
+                        <h3 class="zone-report-title">Zone Report</h3>
+                        <p id="zone-summary" class="zone-report-summary"></p>
+                    </div>
+                    <div class="zone-score-badge">
+                        <span id="zone-overall-score">--</span>
+                        <span class="zone-score-label">/100</span>
+                    </div>
+                </div>
+                <div id="zone-cards-list" class="zone-cards-list"></div>
+            </div>
+
+            <!-- Reopen pill — shown after Analysis panel is closed -->
+            <div id="analysis-reopen-pill" class="analysis-reopen-pill hidden">
+                <button id="btn-reopen-analysis" aria-label="Reopen Space Analysis">
+                    📊 Analysis
+                </button>
             </div>
 
             <!-- Analysis Results (slides up) -->

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes import chat, camera, profile, recommendations, weather, evaluate, video, outdoor
+from backend.api.routes import chat, camera, profile, recommendations, weather, evaluate, video, outdoor, gamification
 from backend.config import DEBUG
 from backend.db.sqlite import init_db
 
@@ -34,7 +34,15 @@ async def lifespan(app: FastAPI):
             from backend.seed_demo import seed_all
             seed_all()
         else:
-            print("[Aura] Demo profiles already exist. Skipping seed.")
+            print("[Aura] Demo profiles already exist. Skipping full seed.")
+            # Migration: seed zone demo data if not yet present
+            try:
+                from backend.db.sqlite import get_zone_analyses
+                if not get_zone_analyses("sarah", limit=1):
+                    from backend.seed_demo import seed_demo_zones
+                    seed_demo_zones()
+            except Exception as e:
+                print(f"[Aura] Zone migration skipped: {e}")
     except Exception as e:
         print(f"[Aura] Demo seeding skipped: {e}")
 
@@ -83,11 +91,13 @@ app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
 app.include_router(evaluate.router, prefix="/api/evaluate", tags=["Evaluation"])
 app.include_router(video.router, prefix="/api/video", tags=["Video"])
 app.include_router(outdoor.router, prefix="/api/outdoor", tags=["Outdoor"])
+app.include_router(gamification.router, prefix="/api/gamification", tags=["Gamification"])
 
-# ── Serve PWA Frontend ───────────────────────────────
-app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
-
-
+# ── Health check (must be registered before the catch-all static mount) ──────
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "service": "aura"}
+
+
+# ── Serve PWA Frontend (catch-all — keep last) ───────────────────────────────
+app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

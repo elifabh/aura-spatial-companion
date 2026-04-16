@@ -117,8 +117,9 @@ async def analyse_video_frames(frames_b64: list[str], room_label: str = None, us
         "2. Key objects and furniture you notice\n"
         "3. Any safety risks or concerns (especially relevant to the user's household and accessibility needs)\n"
         "4. 2-3 specific, actionable improvement suggestions (no purchases), personalised to who lives here\n\n"
-        "Respond in JSON with keys: description, objects_detected (list), "
-        "risks_identified (list), suggestions (list of strings)."
+        "Respond in JSON with keys: description (string), objects_detected (list of strings), "
+        "risks_identified (list of strings), suggestions (list of strings), "
+        "score (object with integer keys: overall, light, air, safety, comfort — each 0-100)."
     )
 
     request_body = {
@@ -157,13 +158,26 @@ async def analyse_video_frames(frames_b64: list[str], room_label: str = None, us
         except Exception:
             result = {}
 
-        # Normalise keys
+        # Normalise score sub-dict
+        raw_score = result.get("score", {})
+        if isinstance(raw_score, dict):
+            score = {
+                "overall":  int(raw_score.get("overall",  50)),
+                "light":    int(raw_score.get("light",    50)),
+                "air":      int(raw_score.get("air",      50)),
+                "safety":   int(raw_score.get("safety",   50)),
+                "comfort":  int(raw_score.get("comfort",  50)),
+            }
+        else:
+            score = {"overall": 50, "light": 50, "air": 50, "safety": 50, "comfort": 50}
+
         return {
-            "description": result.get("description", "Space analysed."),
+            "description":     result.get("description", "Space analysed."),
             "objects_detected": result.get("objects_detected", []),
             "risks_identified": result.get("risks_identified", []),
-            "suggestions": result.get("suggestions", []),
-            "room_label": room_label,
+            "suggestions":     result.get("suggestions", []),
+            "score":           score,
+            "room_label":      room_label,
             "frames_analysed": len(frames_b64),
         }
 
@@ -174,6 +188,7 @@ async def analyse_video_frames(frames_b64: list[str], room_label: str = None, us
             "objects_detected": [],
             "risks_identified": [],
             "suggestions": ["Your space looks interesting! Try a photo scan for detailed analysis."],
+            "score": {"overall": 50, "light": 50, "air": 50, "safety": 50, "comfort": 50},
             "room_label": room_label,
             "frames_analysed": len(frames_b64),
         }

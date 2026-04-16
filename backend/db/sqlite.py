@@ -68,10 +68,21 @@ def init_db():
             timestamp    TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS zone_analyses (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id       TEXT NOT NULL,
+            timestamp     TEXT NOT NULL DEFAULT (datetime('now')),
+            zones         TEXT DEFAULT '[]',
+            overall_score INTEGER DEFAULT 0,
+            summary       TEXT DEFAULT ''
+        );
+
         CREATE INDEX IF NOT EXISTS idx_conversations_user
             ON conversations(user_id, timestamp);
         CREATE INDEX IF NOT EXISTS idx_env_logs_timestamp
             ON environmental_logs(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_zone_analyses_user
+            ON zone_analyses(user_id, timestamp);
             
         CREATE TABLE IF NOT EXISTS session_evaluations (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,6 +95,24 @@ def init_db():
             overall_score REAL,
             timestamp     TEXT NOT NULL DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS suggestion_completions (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id          TEXT NOT NULL,
+            suggestion_text  TEXT NOT NULL,
+            points_awarded   INTEGER DEFAULT 10,
+            timestamp        TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS user_gamification (
+            user_id      TEXT PRIMARY KEY,
+            total_points INTEGER DEFAULT 0,
+            badges       TEXT DEFAULT '[]',
+            updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_completions_user
+            ON suggestion_completions(user_id, timestamp);
     """)
 
     conn.commit()
@@ -199,6 +228,47 @@ def get_recent_moods(user_id: str, limit: int = 7) -> list[dict]:
     ]
 
 import json
+
+
+def log_zone_analysis(user_id: str, zones: list, overall_score: int, summary: str) -> int:
+    """Persist a zone analysis result and return the new row id."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """INSERT INTO zone_analyses (user_id, zones, overall_score, summary)
+           VALUES (?, ?, ?, ?)""",
+        (user_id, json.dumps(zones), overall_score, summary),
+    )
+    conn.commit()
+    row_id = cursor.lastrowid
+    conn.close()
+    return row_id
+
+
+def get_zone_analyses(user_id: str, limit: int = 10) -> list[dict]:
+    """Retrieve recent zone analyses for a user, newest first."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """SELECT id, zones, overall_score, summary, timestamp
+           FROM zone_analyses WHERE user_id = ?
+           ORDER BY timestamp DESC LIMIT ?""",
+        (user_id, limit),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "id": r[0],
+            "zones": json.loads(r[1]),
+            "overall_score": r[2],
+            "summary": r[3],
+            "timestamp": r[4],
+        }
+        for r in rows
+    ]
+
+
 def log_space_analysis(user_id: str, description: str, objects: list, suggestions: list, score: dict):
     conn = get_db_connection()
     cursor = conn.cursor()

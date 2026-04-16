@@ -121,10 +121,24 @@ async def generate_response(
         if graph_block:
             knowledge_note += f"Graph Relations:\n{graph_block}\n\n"
     
+    # Sensory enrichment: detect mood/stress/relaxation keywords and inject
+    # a music + scent hint so Aura can weave them into the reply naturally.
+    sensory_block = ""
+    try:
+        from backend.core.music import detect_mood_from_text, get_sensory_context
+        detected_mood = detect_mood_from_text(user_message)
+        if detected_mood:
+            ctx = get_sensory_context(detected_mood)
+            if ctx:
+                sensory_block = f"\n{ctx}\n"
+    except Exception:
+        pass
+
     full_prompt = (
         f"{knowledge_note}"
         f"[About this person]\n{profile_text}\n\n"
-        f"[Their question]\n{user_message}\n\n"
+        f"[Their question]\n{user_message}\n"
+        f"{sensory_block}\n"
         f"Remember: respond like a warm friend, not a textbook. Keep it short and personal."
     )
 
@@ -203,10 +217,31 @@ async def generate_recommendation(
     try:
         result = json.loads(data.get("response", "[]"))
         if isinstance(result, dict) and "recommendations" in result:
-            return result["recommendations"]
-        if isinstance(result, list):
-            return result
-        return [result]
+            items = result["recommendations"]
+        elif isinstance(result, list):
+            items = result
+        else:
+            items = [result]
+        # Normalise field names: LLM sometimes returns "focus"/"reasoning"
+        # instead of the requested "category"/"relevance_score".
+        normalised = []
+        for item in items:
+            raw_score = (
+                item.get("relevance_score")
+                or item.get("reasoning_score")
+                or item.get("reasoning")
+            )
+            try:
+                score = float(raw_score) if raw_score is not None else 0.5
+            except (ValueError, TypeError):
+                score = 0.5
+            normalised.append({
+                "title": item.get("title", "Tip"),
+                "description": item.get("description", ""),
+                "category": item.get("category") or item.get("focus") or "comfort",
+                "relevance_score": score,
+            })
+        return normalised
     except json.JSONDecodeError:
         return [{
             "title": "General tip",

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/Elif/Desktop/Aura_v1/backend/core/*.py)",
+      "Bash(python *)",
+      "Bash(pip install *)"
+    ]
+  }
+}

@@ -14,13 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (splash) {
         const hasOnboarded = localStorage.getItem('aura_onboarded');
         if (hasOnboarded) {
-            // Already onboarded, fade out immediately
-            splash.classList.add('hidden');
+            // Already onboarded — show splash for 3 seconds then transition
+            setTimeout(() => splash.classList.add('hidden'), 3000);
         } else {
             // New user, show Get Started button after a short delay
             setTimeout(() => {
                 btnGetStarted.classList.remove('hidden');
-            }, 1000);
+            }, 2000);
             
             btnGetStarted.addEventListener('click', () => {
                 localStorage.setItem('aura_onboarded', 'true');
@@ -184,6 +184,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // HOME — Mood Selector
     // ═══════════════════════════════════════════════
 
+    // ─── Spotify playlist data (mirrors backend/core/music.py) ───
+    const MOOD_PLAYLISTS = {
+        stressed: { name: "Peaceful Meditation",  desc: "Slow your breath and let the tension go.",          url: "https://open.spotify.com/playlist/37i9dQZF1DWZd79rJ6a7lp" },
+        tired:    { name: "Morning Motivation",    desc: "Wake up your body and spark some energy.",          url: "https://open.spotify.com/playlist/37i9dQZF1DXc5e2bJhV6pu" },
+        anxious:  { name: "Anxiety Relief",        desc: "Gentle, grounding music to ease your mind.",       url: "https://open.spotify.com/playlist/37i9dQZF1DWXe9gFZP0gtP" },
+        calm:     { name: "Cozy Evenings",         desc: "Warm, unhurried tones for a quiet evening in.",    url: "https://open.spotify.com/playlist/37i9dQZF1DX4E3UdUs7fUx" },
+        energetic:{ name: "Power Hour",            desc: "High-energy tracks to match your unstoppable mood.",url: "https://open.spotify.com/playlist/37i9dQZF1DX76Wlfdnj7AP" },
+        creative: { name: "Creative Flow",         desc: "Instrumental vibes to keep your ideas flowing.",   url: "https://open.spotify.com/playlist/37i9dQZF1DWXLeA8Omikj7" },
+        sad:      { name: "Comfort Songs",         desc: "Warm, tender music that feels like a hug.",        url: "https://open.spotify.com/playlist/37i9dQZF1DX7gIoKXt0gmx" },
+        angry:    { name: "Release the Tension",   desc: "Channel the energy and let it move through you.",  url: "https://open.spotify.com/playlist/37i9dQZF1DWTggY0yqBxES" },
+        happy:    { name: "Happy Hits",            desc: "Pure joy — turn it up and enjoy the good vibes!", url: "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC" },
+        focused:  { name: "Deep Focus",            desc: "Minimal distractions, maximum concentration.",     url: "https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ" },
+    };
+
     const moodGrid = document.getElementById('mood-grid');
     moodGrid.addEventListener('click', (e) => {
         const btn = e.target.closest('.mood-btn');
@@ -236,8 +250,28 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="mood-act-text">${act.suggestion}</div>
                             </div>
                         `;
+                        card.appendChild(_makeSuggestionCheckbox(act.suggestion));
                         actContainer.appendChild(card);
                     });
+
+                    // Spotify music card — slides in after activity cards
+                    const playlist = MOOD_PLAYLISTS[mood];
+                    if (playlist) {
+                        const musicCard = document.createElement('div');
+                        musicCard.className = 'spotify-card';
+                        musicCard.style.animationDelay = `${res.activities.length * 0.1 + 0.15}s`;
+                        musicCard.innerHTML = `
+                            <div class="spotify-card-icon">♪</div>
+                            <div class="spotify-card-body">
+                                <div class="spotify-card-name">${playlist.name}</div>
+                                <div class="spotify-card-desc">${playlist.desc}</div>
+                                <a class="spotify-card-btn" href="${playlist.url}" target="_blank" rel="noopener noreferrer">
+                                    Open in Spotify →
+                                </a>
+                            </div>
+                        `;
+                        actContainer.appendChild(musicCard);
+                    }
                 }
             }
         }).catch(err => console.error("Could not log mood:", err));
@@ -301,15 +335,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const blob = await AuraCamera.capture();
         if (!blob) return;
 
-        // Show results panel with loading state
-        const resultsPanel = document.getElementById('analysis-results');
+        // Reset demo state — real scan uses the logged-in user profile only
+        _demoProfile = null;
+        window.currentUserId = 'default';
+        document.querySelectorAll('.demo-chip').forEach(c => c.classList.remove('active'));
+        document.getElementById('demo-scan-action').classList.add('hidden');
+        document.getElementById('demo-profile-bar').classList.add('hidden');
+
+        // Clear any previous zone overlay before starting a new capture
+        _clearZones();
+
+        // Run zone analysis in parallel with the main space analysis
+        runZoneAnalysis(blob);
+
+        // Show results panel with loading state (also hides any lingering reopen pill)
+        _resetAnalysisState();
         document.getElementById('result-description').textContent = 'Analysing your space…';
         document.getElementById('result-objects').innerHTML = '<span class="shimmer" style="width:60px;height:20px;display:inline-block"></span>';
         document.getElementById('result-suggestions').innerHTML = '<div class="shimmer" style="height:60px;margin-bottom:8px"></div>'.repeat(3);
-        resultsPanel.classList.remove('hidden');
+        _showAnalysisPanel();
 
         try {
-            const result = await AuraAPI.analyseImage(blob);
+            const _scanUserId = window.currentUserId || 'default';
+            const _compassHeading = (typeof AuraOrientation !== 'undefined') ? AuraOrientation.getHeading() : null;
+            const result = await AuraAPI.analyseImage(blob, _scanUserId, _compassHeading);
 
             // Description
             document.getElementById('result-description').textContent =
@@ -349,11 +398,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 result.suggestions.forEach((s, i) => {
                     const item = document.createElement('div');
                     item.className = 'suggestion-item';
-                    
+
+                    const suggestionText = typeof s === 'object' ? (s.action || '') : s;
+
                     if (typeof s === 'object') {
                         item.innerHTML = `
                             <span class="suggestion-num">${i + 1}</span>
-                            <div style="display:flex; flex-direction:column; gap: 4px;">
+                            <div style="display:flex; flex-direction:column; gap: 4px; flex:1; min-width:0;">
                                 <span class="suggestion-text"><strong>${s.action || ''}</strong></span>
                                 <span style="font-size: 0.8rem; color: var(--text-secondary);"><em>${s.why_this_matters || ''}</em></span>
                                 <span style="font-size: 0.75rem; color: var(--text-tertiary);">Confidence: ${s.confidence || 0}%</span>
@@ -362,9 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         item.innerHTML = `
                             <span class="suggestion-num">${i + 1}</span>
-                            <span class="suggestion-text">${s}</span>
+                            <span class="suggestion-text" style="flex:1; min-width:0;">${s}</span>
                         `;
                     }
+                    item.appendChild(_makeSuggestionCheckbox(suggestionText));
                     sugContainer.appendChild(item);
                 });
             } else {
@@ -403,11 +455,637 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const _analysisPanel = document.getElementById('analysis-results');
+    const _reopenPill    = document.getElementById('analysis-reopen-pill');
+
+    function _showAnalysisPanel()  { _analysisPanel.classList.remove('hidden'); _reopenPill.classList.add('hidden'); }
+    function _hideAnalysisPanel()  { _analysisPanel.classList.add('hidden');    _reopenPill.classList.remove('hidden'); }
+    function _resetAnalysisState() { _analysisPanel.classList.add('hidden');    _reopenPill.classList.add('hidden'); }
+
     document.getElementById('btn-close-results').addEventListener('click', () => {
-        document.getElementById('analysis-results').classList.add('hidden');
+        _hideAnalysisPanel();
         document.getElementById('room-label-row').style.display = 'none';
         document.getElementById('room-label-input').value = '';
     });
+
+    document.getElementById('btn-reopen-analysis').addEventListener('click', _showAnalysisPanel);
+
+    // ═══════════════════════════════════════════════
+    // SHARED — Points toast + suggestion checkbox
+    // ═══════════════════════════════════════════════
+
+    function _showPointsToast(points) {
+        let toast = document.getElementById('aura-points-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'aura-points-toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = `+${points} Aura Points ✓`;
+        toast.classList.add('show');
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function _makeSuggestionCheckbox(suggestionText) {
+        const btn = document.createElement('button');
+        btn.className = 'suggestion-checkbox';
+        btn.setAttribute('aria-label', 'Mark as done');
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (btn.classList.contains('checked')) return;
+            btn.textContent = '✓';
+            btn.classList.add('checked');
+            const card = btn.closest('.suggestion-item, .zone-card');
+            if (card) card.classList.add('done');
+            try {
+                const userId = window.currentUserId || 'default';
+                const res = await AuraAPI.completeSuggestion(suggestionText, userId);
+                _showPointsToast(res.points_awarded ?? 5);
+            } catch (err) {
+                console.error('[Aura] Could not save completion:', err);
+            }
+        });
+        return btn;
+    }
+
+    // ═══════════════════════════════════════════════
+    // SCAN — Zone Analysis
+    // ═══════════════════════════════════════════════
+
+    const ZONE_COLORS = {
+        red:    { fill: 'rgba(239,68,68,0.22)',   stroke: '#EF4444', label: '#fff' },
+        yellow: { fill: 'rgba(251,191,36,0.22)',  stroke: '#FBBF24', label: '#000' },
+        green:  { fill: 'rgba(52,211,153,0.22)',  stroke: '#34D399', label: '#000' },
+        blue:   { fill: 'rgba(96,165,250,0.22)',  stroke: '#60A5FA', label: '#fff' },
+    };
+    const ZONE_ICONS = { danger: '🔴', caution: '🟡', opportunity: '🟢', suggestion: '🔵' };
+
+    let _currentZones = [];
+
+    /** Seek a video blob to its middle frame and return a JPEG blob via canvas. */
+    function _extractMiddleFrame(videoBlob) {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement('video');
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            const url = URL.createObjectURL(videoBlob);
+            video.src = url;
+
+            video.addEventListener('loadedmetadata', () => {
+                video.currentTime = video.duration > 0 ? video.duration / 2 : 0;
+            });
+
+            video.addEventListener('seeked', () => {
+                try {
+                    const c = document.createElement('canvas');
+                    c.width  = video.videoWidth  || 640;
+                    c.height = video.videoHeight || 480;
+                    c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+                    c.toBlob(blob => {
+                        URL.revokeObjectURL(url);
+                        blob ? resolve(blob) : reject(new Error('toBlob failed'));
+                    }, 'image/jpeg', 0.85);
+                } catch (e) { URL.revokeObjectURL(url); reject(e); }
+            });
+
+            video.addEventListener('error', e => { URL.revokeObjectURL(url); reject(e); });
+        });
+    }
+
+    /** Draw a blob as a cover-fitted image on a canvas 2D context. */
+    function _drawBlobOnCanvas(ctx, blob, w, h) {
+        return new Promise(resolve => {
+            const img = new Image();
+            const url = URL.createObjectURL(blob);
+            img.onload  = () => { ctx.drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url); resolve(); };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+            img.src = url;
+        });
+    }
+
+    async function runZoneAnalysis(blob) {
+        const overlay    = document.getElementById('zone-overlay');
+        const viewfinder = document.querySelector('.camera-viewfinder');
+        const userId     = window.currentUserId || 'default';
+
+        // Size the overlay canvas to the viewfinder's rendered dimensions
+        const ow = viewfinder.clientWidth;
+        const oh = viewfinder.clientHeight;
+        overlay.width  = ow;
+        overlay.height = oh;
+
+        const ctx = overlay.getContext('2d');
+
+        const drawCapturedImage = () => new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => { ctx.drawImage(img, 0, 0, ow, oh); resolve(); };
+            img.src = URL.createObjectURL(blob);
+        });
+
+        // Loading state — draw frozen frame + dim overlay
+        await drawCapturedImage();
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0, 0, ow, oh);
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Identifying zones\u2026', ow / 2, oh / 2);
+
+        overlay.classList.add('visible');
+        document.getElementById('btn-clear-zones').classList.remove('hidden');
+        // Keep entire demo bar and video controls hidden while a real scan overlay is showing
+        document.getElementById('demo-scan-action').classList.add('hidden');
+        document.getElementById('demo-profile-bar').classList.add('hidden');
+        document.getElementById('video-controls').classList.add('hidden');
+
+        try {
+            const result = await AuraAPI.analyseZones(blob, userId);
+            _currentZones = result.zones || [];
+
+            // Redraw clean captured image then animate zones on top
+            ctx.clearRect(0, 0, ow, oh);
+            await drawCapturedImage();
+            _drawZones(overlay, _currentZones);
+
+            // Show zone report cards below camera
+            _renderZoneReport(result);
+            document.getElementById('zone-report').classList.remove('hidden');
+
+        } catch (err) {
+            console.error('[Aura Zones] Zone analysis failed:', err);
+            ctx.clearRect(0, 0, ow, oh);
+            await drawCapturedImage();
+            ctx.fillStyle = 'rgba(239,68,68,0.4)';
+            ctx.fillRect(0, 0, ow, oh);
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Zone analysis unavailable', ow / 2, oh / 2);
+        }
+    }
+
+    function _drawZones(canvas, zones) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Cap at 4 zones (highest priority first — already sorted by priority asc)
+        const visibleZones = zones.slice(0, 4);
+
+        visibleZones.forEach((zone, idx) => {
+            // Stagger each zone by 200 ms for animated fade-in effect
+            setTimeout(() => {
+                const x  = (zone.x_percent       / 100) * w;
+                const y  = (zone.y_percent        / 100) * h;
+                const zw = (zone.width_percent    / 100) * w;
+                const zh = (zone.height_percent   / 100) * h;
+                const c  = ZONE_COLORS[zone.color] || ZONE_COLORS.blue;
+
+                // Semi-transparent fill
+                ctx.fillStyle = c.fill;
+                ctx.fillRect(x, y, zw, zh);
+
+                // Coloured border
+                ctx.strokeStyle = c.stroke;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, zw, zh);
+
+                // Label badge positioning: avoid right overflow and left-edge clipping
+                ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+                const textW  = ctx.measureText(zone.label).width;
+                const badgeW = Math.min(textW + 16, zw);
+                const badgeH = 20;
+                let labelX;
+                if (x + badgeW > w) {
+                    // Would overflow right edge — push left
+                    labelX = Math.max(4, w - badgeW);
+                } else if (x < w * 0.15) {
+                    // Near left edge — nudge inside the zone so text isn't clipped
+                    labelX = x + 4;
+                } else {
+                    labelX = x;
+                }
+                ctx.fillStyle = c.stroke;
+                ctx.fillRect(labelX, y, badgeW, badgeH);
+                ctx.fillStyle = c.label;
+                ctx.fillText(zone.label, labelX + 8, y + badgeH / 2);
+            }, idx * 200);
+        });
+
+        // Tap/click → show zone detail card
+        canvas.onclick = (e) => {
+            const rect   = canvas.getBoundingClientRect();
+            const scaleX = canvas.width  / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top)  * scaleY;
+
+            const tapped = _currentZones.find(zone => {
+                const x  = (zone.x_percent       / 100) * canvas.width;
+                const y  = (zone.y_percent        / 100) * canvas.height;
+                const zw = (zone.width_percent    / 100) * canvas.width;
+                const zh = (zone.height_percent   / 100) * canvas.height;
+                return cx >= x && cx <= x + zw && cy >= y && cy <= y + zh;
+            });
+            if (tapped) _showZoneDetail(tapped);
+        };
+    }
+
+    function _showZoneDetail(zone) {
+        document.getElementById('zone-detail-icon').textContent          = ZONE_ICONS[zone.type] || '●';
+        document.getElementById('zone-detail-label').textContent         = zone.label;
+        document.getElementById('zone-detail-description').textContent   = zone.description;
+        document.getElementById('zone-detail-recommendation').textContent = zone.recommendation;
+        document.getElementById('zone-detail-card').classList.remove('hidden');
+    }
+
+    function _renderZoneReport(result) {
+        document.getElementById('zone-overall-score').textContent = result.overall_score ?? '--';
+        document.getElementById('zone-summary').textContent       = result.summary || '';
+
+        const list = document.getElementById('zone-cards-list');
+        list.innerHTML = '';
+        (result.zones || []).forEach(zone => {
+            const card = document.createElement('div');
+            card.className = `zone-card ${zone.type}`;
+            card.innerHTML = `
+                <span class="zone-card-icon">${ZONE_ICONS[zone.type] || '●'}</span>
+                <div class="zone-card-body">
+                    <div class="zone-card-label">${zone.label}</div>
+                    <div class="zone-card-rec">${zone.recommendation}</div>
+                </div>
+            `;
+            card.appendChild(_makeSuggestionCheckbox(zone.recommendation));
+            card.addEventListener('click', () => _showZoneDetail(zone));
+            list.appendChild(card);
+        });
+    }
+
+    // restoreDemo=true only when the user explicitly presses X — not during scan setup
+    function _clearZones(restoreDemo = false) {
+        const overlay = document.getElementById('zone-overlay');
+        overlay.classList.remove('visible');
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        document.getElementById('zone-report').classList.add('hidden');
+        document.getElementById('zone-detail-card').classList.add('hidden');
+        document.getElementById('btn-clear-zones').classList.add('hidden');
+        _currentZones = [];
+        if (restoreDemo) {
+            // Pressing X returns the user to idle scan state — restore live-camera UI
+            document.getElementById('video-controls').classList.remove('hidden');
+            document.getElementById('demo-profile-bar').classList.remove('hidden');
+            if (_demoProfile) {
+                document.getElementById('demo-scan-action').classList.remove('hidden');
+            }
+        }
+    }
+
+    // Close zone detail card
+    document.getElementById('btn-zone-detail-close').addEventListener('click', () => {
+        document.getElementById('zone-detail-card').classList.add('hidden');
+    });
+
+    // Clear zone overlay → back to live camera (pass restoreDemo=true)
+    document.getElementById('btn-clear-zones').addEventListener('click', () => _clearZones(true));
+
+    // ═══════════════════════════════════════════════
+    // SCAN — Demo Mode
+    // ═══════════════════════════════════════════════
+
+    const DEMO_META = {
+        sarah:     { label: 'Sarah',      avatar: 'S', subtitle: 'Young mum · Cork',   bg: 'living_room' },
+        seamus:    { label: 'Seamus',     avatar: 'S', subtitle: 'Elder · Galway',      bg: 'hallway'     },
+        ms_murphy: { label: 'Ms. Murphy', avatar: 'M', subtitle: 'Teacher · Dublin',    bg: 'classroom'   },
+    };
+
+    let _demoProfile = null;
+
+    document.getElementById('demo-profile-bar').addEventListener('click', (e) => {
+        const chip = e.target.closest('.demo-chip');
+        if (!chip) return;
+
+        _demoProfile = chip.dataset.profile;
+        // Route ALL API calls through this demo user so the LLM receives the correct profile
+        window.currentUserId = _demoProfile;
+        const meta = DEMO_META[_demoProfile];
+
+        // Update active chip
+        document.querySelectorAll('.demo-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        // Populate and show the demo-scan-action panel
+        document.getElementById('demo-scan-avatar').textContent  = meta.avatar;
+        document.getElementById('demo-scan-name').textContent    = meta.label;
+        document.getElementById('demo-scan-subtitle').textContent = meta.subtitle;
+        document.getElementById('demo-scan-action').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-demo-scan').addEventListener('click', () => {
+        if (_demoProfile) _runDemoScan(_demoProfile);
+    });
+
+    async function _runDemoScan(userId) {
+        const overlay    = document.getElementById('zone-overlay');
+        const viewfinder = document.querySelector('.camera-viewfinder');
+
+        const ow = viewfinder.clientWidth;
+        const oh = viewfinder.clientHeight;
+        overlay.width  = ow;
+        overlay.height = oh;
+
+        const ctx = overlay.getContext('2d');
+        const bg  = DEMO_META[userId]?.bg || 'living_room';
+
+        // Clear any existing zones first
+        _clearZones();
+        overlay.width  = ow;
+        overlay.height = oh;
+
+        // Draw the room illustration
+        _drawRoomBackground(ctx, ow, oh, bg);
+
+        // Loading overlay
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(0, 0, ow, oh);
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Loading demo zones\u2026', ow / 2, oh / 2);
+
+        overlay.classList.add('visible');
+        document.getElementById('btn-clear-zones').classList.remove('hidden');
+        document.getElementById('video-controls').classList.add('hidden');
+
+        try {
+            const result = await AuraAPI.getDemoZones(userId);
+            _currentZones = result.zones || [];
+
+            ctx.clearRect(0, 0, ow, oh);
+            _drawRoomBackground(ctx, ow, oh, bg);
+            _drawZones(overlay, _currentZones);
+
+            _renderZoneReport(result);
+            document.getElementById('zone-report').classList.remove('hidden');
+
+            // Hide the profile pill + scan button — X button will restore them
+            document.getElementById('demo-scan-action').classList.add('hidden');
+
+        } catch (err) {
+            console.error('[Aura Demo] Failed to load demo zones:', err);
+            ctx.clearRect(0, 0, ow, oh);
+            _drawRoomBackground(ctx, ow, oh, bg);
+            ctx.fillStyle = 'rgba(239,68,68,0.5)';
+            ctx.fillRect(0, 0, ow, oh);
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Demo unavailable — run server seed first', ow / 2, oh / 2);
+        }
+    }
+
+    // ── Room background drawing ──────────────────
+
+    function _drawRoomBackground(ctx, w, h, type) {
+        if      (type === 'living_room') _drawLivingRoom(ctx, w, h);
+        else if (type === 'hallway')     _drawHallway(ctx, w, h);
+        else if (type === 'classroom')   _drawClassroom(ctx, w, h);
+    }
+
+    function _drawLivingRoom(ctx, w, h) {
+        // ── Wall ────────────────────────────────────────
+        const wallGrad = ctx.createLinearGradient(0, 0, 0, h * 0.62);
+        wallGrad.addColorStop(0, '#f2e4c8');
+        wallGrad.addColorStop(1, '#e4d09a');
+        ctx.fillStyle = wallGrad;
+        ctx.fillRect(0, 0, w, h * 0.62);
+
+        // ── Floor ───────────────────────────────────────
+        const floorGrad = ctx.createLinearGradient(0, h * 0.62, 0, h);
+        floorGrad.addColorStop(0, '#c8944a');
+        floorGrad.addColorStop(1, '#a87030');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, h * 0.62, w, h * 0.38);
+
+        // Floor plank lines
+        ctx.strokeStyle = 'rgba(100, 60, 20, 0.18)';
+        ctx.lineWidth = 1;
+        for (let y = h * 0.65; y < h; y += h * 0.07) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        // Baseboard
+        ctx.fillStyle = '#d4a860';
+        ctx.fillRect(0, h * 0.60, w, h * 0.04);
+
+        // ── Window (right, maps to Window Cord zone ~70%,8%) ──
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(w * 0.68, h * 0.05, w * 0.24, h * 0.37);
+        ctx.strokeStyle = '#c8a060';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(w * 0.68, h * 0.05, w * 0.24, h * 0.37);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.80, h * 0.05); ctx.lineTo(w * 0.80, h * 0.42);
+        ctx.moveTo(w * 0.68, h * 0.22); ctx.lineTo(w * 0.92, h * 0.22);
+        ctx.stroke();
+        // Blind cord (hazard)
+        ctx.strokeStyle = '#a07040';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(w * 0.82, h * 0.05); ctx.lineTo(w * 0.82, h * 0.50); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Light through window
+        const winLight = ctx.createLinearGradient(w * 0.68, 0, w, 0);
+        winLight.addColorStop(0, 'rgba(255,240,180,0)');
+        winLight.addColorStop(1, 'rgba(255,240,180,0.12)');
+        ctx.fillStyle = winLight;
+        ctx.fillRect(0, 0, w, h * 0.62);
+
+        // ── Rug / play zone glow (~14%,28%) ─────────────
+        const rugGrad = ctx.createRadialGradient(w*0.32, h*0.48, 0, w*0.32, h*0.48, w*0.22);
+        rugGrad.addColorStop(0, 'rgba(200,148,70,0.45)');
+        rugGrad.addColorStop(1, 'rgba(200,148,70,0)');
+        ctx.fillStyle = rugGrad;
+        ctx.fillRect(w*0.08, h*0.22, w*0.44, h*0.42);
+
+        // ── Sofa ────────────────────────────────────────
+        ctx.fillStyle = '#8a6845';
+        ctx.fillRect(w * 0.12, h * 0.44, w * 0.55, h * 0.20);
+        ctx.fillStyle = '#7a5838';
+        ctx.fillRect(w * 0.12, h * 0.42, w * 0.55, h * 0.06);
+        ctx.fillStyle = '#9e7a52';
+        ctx.fillRect(w * 0.14, h * 0.46, w * 0.24, h * 0.16);
+        ctx.fillRect(w * 0.42, h * 0.46, w * 0.22, h * 0.16);
+
+        // ── Coffee table (hazard, ~28%,42%) ─────────────
+        ctx.fillStyle = '#7a4020';
+        ctx.fillRect(w * 0.24, h * 0.55, w * 0.26, h * 0.09);
+        ctx.fillStyle = '#5a2c10';
+        ctx.fillRect(w * 0.25, h * 0.63, w * 0.03, h * 0.04);
+        ctx.fillRect(w * 0.46, h * 0.63, w * 0.03, h * 0.04);
+
+        // ── Wall lamp (left) ────────────────────────────
+        ctx.fillStyle = '#c8a060';
+        ctx.fillRect(w * 0.05, h * 0.29, w * 0.04, h * 0.18);
+        ctx.fillStyle = '#fffacd';
+        ctx.beginPath();
+        ctx.moveTo(w*0.02, h*0.29); ctx.lineTo(w*0.11, h*0.29);
+        ctx.lineTo(w*0.09, h*0.17); ctx.lineTo(w*0.04, h*0.17);
+        ctx.closePath(); ctx.fill();
+        // Glow
+        const lampG = ctx.createRadialGradient(w*0.065, h*0.23, 0, w*0.065, h*0.23, w*0.10);
+        lampG.addColorStop(0, 'rgba(255,245,180,0.4)');
+        lampG.addColorStop(1, 'rgba(255,245,180,0)');
+        ctx.fillStyle = lampG;
+        ctx.fillRect(0, h*0.12, w*0.18, h*0.24);
+
+        // ── Socket (floor level, ~5%,72%) ───────────────
+        ctx.fillStyle = '#e8d4a8';
+        ctx.fillRect(w*0.03, h*0.70, w*0.07, h*0.06);
+        ctx.strokeStyle = '#b09050';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w*0.03, h*0.70, w*0.07, h*0.06);
+        ctx.fillStyle = '#80603a';
+        ctx.fillRect(w*0.044, h*0.72, w*0.013, h*0.02);
+        ctx.fillRect(w*0.062, h*0.72, w*0.013, h*0.02);
+
+        // Wall texture
+        ctx.strokeStyle = 'rgba(180,150,80,0.12)';
+        ctx.lineWidth = 1;
+        for (let y = h * 0.12; y < h * 0.62; y += h * 0.08) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+    }
+
+    function _drawHallway(ctx, w, h) {
+        const cx = w * 0.50, cy = h * 0.38;
+
+        // ── Ceiling ──────────────────────────────────────
+        ctx.fillStyle = '#e2ddd6';
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(w, 0);
+        ctx.lineTo(cx + w*0.16, cy - h*0.13);
+        ctx.lineTo(cx - w*0.16, cy - h*0.13);
+        ctx.closePath(); ctx.fill();
+
+        // ── Left wall ────────────────────────────────────
+        ctx.fillStyle = '#cec9c2';
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(cx - w*0.16, cy - h*0.13);
+        ctx.lineTo(cx - w*0.11, cy + h*0.12); ctx.lineTo(0, h);
+        ctx.closePath(); ctx.fill();
+        // Grab rail suggestion area dashed border (~5%,28%)
+        ctx.strokeStyle = 'rgba(130,110,90,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeRect(w*0.01, h*0.25, w*0.16, h*0.46);
+        ctx.setLineDash([]);
+
+        // ── Right wall ───────────────────────────────────
+        const rwGrad = ctx.createLinearGradient(cx + w*0.11, 0, w, 0);
+        rwGrad.addColorStop(0, '#beb9b2');
+        rwGrad.addColorStop(1, '#6a6560');
+        ctx.fillStyle = rwGrad;
+        ctx.beginPath();
+        ctx.moveTo(w, 0); ctx.lineTo(cx + w*0.16, cy - h*0.13);
+        ctx.lineTo(cx + w*0.11, cy + h*0.12); ctx.lineTo(w, h);
+        ctx.closePath(); ctx.fill();
+
+        // ── Floor ────────────────────────────────────────
+        const floorG = ctx.createLinearGradient(0, h, 0, cy + h*0.12);
+        floorG.addColorStop(0, '#6a6560');
+        floorG.addColorStop(1, '#8a8480');
+        ctx.fillStyle = floorG;
+        ctx.beginPath();
+        ctx.moveTo(0, h); ctx.lineTo(cx - w*0.11, cy + h*0.12);
+        ctx.lineTo(cx + w*0.11, cy + h*0.12); ctx.lineTo(w, h);
+        ctx.closePath(); ctx.fill();
+        // Floor tile lines
+        ctx.strokeStyle = 'rgba(90,85,80,0.25)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 4; i++) {
+            const t = i / 5;
+            const ly = cy + h*0.12 + (h - cy - h*0.12) * (1-t);
+            const lx = (0 - (cx-w*0.11)) * t + (cx-w*0.11);
+            const rx = (w - (cx+w*0.11)) * t + (cx+w*0.11);
+            ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(rx, ly); ctx.stroke();
+        }
+
+        // ── Back wall + door ─────────────────────────────
+        ctx.fillStyle = '#b0a89e';
+        ctx.fillRect(cx - w*0.16, cy - h*0.13, w*0.32, h*0.25);
+        ctx.fillStyle = '#a09080';
+        ctx.fillRect(cx - w*0.08, cy - h*0.11, w*0.14, h*0.24);
+        ctx.strokeStyle = '#806858';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - w*0.08, cy - h*0.11, w*0.14, h*0.24);
+        // Door panels
+        ctx.strokeStyle = 'rgba(70,58,44,0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cx - w*0.06, cy - h*0.09, w*0.10, h*0.09);
+        ctx.strokeRect(cx - w*0.06, cy + h*0.02, w*0.10, h*0.09);
+        // Knob
+        ctx.fillStyle = '#c8a878';
+        ctx.beginPath(); ctx.arc(cx + w*0.04, cy + h*0.02, 4, 0, Math.PI*2); ctx.fill();
+
+        // ── Loose rug (~20%,48%) ─────────────────────────
+        ctx.save();
+        ctx.translate(w*0.38, h*0.60);
+        ctx.scale(1, 0.35);
+        ctx.fillStyle = 'rgba(140,80,40,0.6)';
+        ctx.beginPath(); ctx.ellipse(0, 0, w*0.26, h*0.24, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = 'rgba(180,110,60,0.8)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+
+        // ── Ceiling light ────────────────────────────────
+        ctx.fillStyle = '#fffacd';
+        ctx.beginPath(); ctx.arc(cx, cy - h*0.11, 10, 0, Math.PI*2); ctx.fill();
+        const glow = ctx.createRadialGradient(cx, cy - h*0.11, 0, cx, cy - h*0.11, w*0.18);
+        glow.addColorStop(0, 'rgba(255,248,200,0.55)');
+        glow.addColorStop(1, 'rgba(255,248,200,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(cx, cy - h*0.11, w*0.18, 0, Math.PI*2); ctx.fill();
+    }
+
+    function _drawClassroom(ctx, w, h) {
+        // Minimal light-grey classroom sketch — just enough context for zones to read clearly
+
+        // ── Wall (upper 60%) ─────────────────────────────
+        ctx.fillStyle = '#e8e8e8';
+        ctx.fillRect(0, 0, w, h * 0.60);
+
+        // ── Floor (lower 40%) ────────────────────────────
+        ctx.fillStyle = '#d4d0c8';
+        ctx.fillRect(0, h * 0.60, w, h * 0.40);
+
+        // Floor perspective lines
+        ctx.strokeStyle = 'rgba(160,155,145,0.35)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 5; i++) {
+            const ty = h * 0.60 + (h * 0.40) * (i / 6);
+            ctx.beginPath(); ctx.moveTo(0, ty); ctx.lineTo(w, ty); ctx.stroke();
+        }
+
+        // ── Whiteboard outline only (~8%,5%) ─────────────
+        ctx.strokeStyle = '#aaaaaa';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(w * 0.05, h * 0.05, w * 0.46, h * 0.36);
+        // Tray strip
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(w * 0.05, h * 0.39, w * 0.46, h * 0.02);
+    }
 
     // ── Video Controls ──
     const btnRecordVideo = document.getElementById('btn-record-video');
@@ -434,28 +1112,87 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentVideoAnalysis = null;
 
     async function handleVideoUpload(videoData, isFile = false) {
-        // Show loading state
-        const resultsPanel = document.getElementById('analysis-results');
+        // Reset demo state — video upload is always a real scan
+        _demoProfile = null;
+        window.currentUserId = 'default';
+        document.querySelectorAll('.demo-chip').forEach(c => c.classList.remove('active'));
+        document.getElementById('demo-scan-action').classList.add('hidden');
+        document.getElementById('demo-profile-bar').classList.add('hidden');
+
+        const videoUserId = 'default';
+
+        // ── Zone overlay: extract middle frame and fire zone analysis ──────────
+        const overlay    = document.getElementById('zone-overlay');
+        const viewfinder = document.querySelector('.camera-viewfinder');
+        const ow = viewfinder.clientWidth;
+        const oh = viewfinder.clientHeight;
+        overlay.width  = ow;
+        overlay.height = oh;
+        const ctx = overlay.getContext('2d');
+
+        // Extract middle frame from the video client-side
+        let frameBlob = null;
+        try {
+            frameBlob = await _extractMiddleFrame(videoData);
+        } catch (e) {
+            console.warn('[Aura Video] Frame extraction failed:', e);
+        }
+
+        // Draw frame (or black fallback) + loading state on overlay
+        if (frameBlob) {
+            await _drawBlobOnCanvas(ctx, frameBlob, ow, oh);
+        } else {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, ow, oh);
+        }
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(0, 0, ow, oh);
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 15px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Identifying zones\u2026', ow / 2, oh / 2);
+
+        overlay.classList.add('visible');
+        document.getElementById('btn-clear-zones').classList.remove('hidden');
+        document.getElementById('video-controls').classList.add('hidden');
+
+        // Fire zone analysis on the extracted frame (non-blocking — runs in parallel)
+        if (frameBlob) {
+            AuraAPI.analyseZones(frameBlob, videoUserId).then(async zoneResult => {
+                _currentZones = zoneResult.zones || [];
+                ctx.clearRect(0, 0, ow, oh);
+                await _drawBlobOnCanvas(ctx, frameBlob, ow, oh);
+                _drawZones(overlay, _currentZones);
+                _renderZoneReport(zoneResult);
+                document.getElementById('zone-report').classList.remove('hidden');
+            }).catch(err => {
+                console.error('[Aura Video] Zone analysis failed:', err);
+                ctx.clearRect(0, 0, ow, oh);
+                _drawBlobOnCanvas(ctx, frameBlob, ow, oh);
+            });
+        }
+
+        // ── Text analysis panel: full video upload ─────────────────────────────
+        _resetAnalysisState();
         document.getElementById('result-description').textContent = 'Analysing video frames (this may take a minute)…';
         document.getElementById('result-objects').innerHTML = '<span class="shimmer" style="width:60px;height:20px;display:inline-block"></span>';
         document.getElementById('result-suggestions').innerHTML = '<div class="shimmer" style="height:60px;margin-bottom:8px"></div>'.repeat(3);
         document.getElementById('score-section').style.display = 'none';
-        document.getElementById('room-label-row').style.display = 'flex'; // Show room label input
-        resultsPanel.classList.remove('hidden');
+        document.getElementById('room-label-row').style.display = 'flex';
+        _showAnalysisPanel();
         currentVideoAnalysis = null;
 
         try {
-            let result;
-            if (isFile) {
-                result = await AuraAPI.uploadVideoFile(videoData);
-            } else {
-                result = await AuraAPI.uploadVideo(videoData);
-            }
+            const result = isFile
+                ? await AuraAPI.uploadVideoFile(videoData, null, videoUserId)
+                : await AuraAPI.uploadVideo(videoData, null, videoUserId);
 
             const analysis = result.analysis || {};
             currentVideoAnalysis = analysis;
 
-            document.getElementById('result-description').textContent = analysis.description || 'Video analysed successfully.';
+            document.getElementById('result-description').textContent =
+                analysis.description || 'Video analysed successfully.';
 
             const objContainer = document.getElementById('result-objects');
             objContainer.innerHTML = '';
@@ -486,9 +1223,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 sugContainer.innerHTML = '<p style="color:var(--text-secondary);font-size:var(--fs-sm)">No specific suggestions at this time.</p>';
             }
 
+            // Space Score ring
+            if (analysis.score) {
+                document.getElementById('score-section').style.display = 'block';
+                document.getElementById('score-number').textContent  = analysis.score.overall || 0;
+                document.getElementById('score-light').textContent   = analysis.score.light   || 0;
+                document.getElementById('score-air').textContent     = analysis.score.air     || 0;
+                document.getElementById('score-safety').textContent  = analysis.score.safety  || 0;
+                document.getElementById('score-comfort').textContent = analysis.score.comfort || 0;
+                setTimeout(() => {
+                    document.getElementById('score-ring').style.strokeDasharray =
+                        `${analysis.score.overall || 0}, 100`;
+                }, 100);
+                document.getElementById('score-diff').textContent = '';
+            }
+
         } catch (err) {
-            console.error("Video error:", err);
-            document.getElementById('result-description').textContent = 'Video analysis failed. Please ensure the backend supports OpenCV and Gemma.';
+            console.error('[Aura Video] Text analysis failed:', err);
+            document.getElementById('result-description').textContent =
+                'Video analysis failed. Please ensure the backend supports OpenCV and Gemma.';
             document.getElementById('result-objects').innerHTML = '';
             document.getElementById('result-suggestions').innerHTML = '';
         }

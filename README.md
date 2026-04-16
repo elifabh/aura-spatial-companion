@@ -86,6 +86,43 @@ Aura believes that this profound connection doesn't require buying new things. I
 
 ---
 
+## ✨ Latest Features
+
+### Zone Analysis & Visual Mapping
+- Colour-coded zones overlaid on room image (danger / caution / opportunity / suggestion)
+- Tap any zone to see recommendation
+- Zone Report scrollable below camera
+- Validated coordinates (floor zones only in lower half of image)
+
+### Demo Mode
+- Pre-loaded scenarios for Sarah (Cork), Seamus (Galway), Ms. Murphy (Dublin)
+- Illustrated room backgrounds per profile
+- Works without real camera/Gemma 4
+
+### Video Upload
+- Upload room video for analysis
+- Middle frame extracted automatically
+- Zones overlaid on real room screenshot
+
+### Suggestion Completion & Gamification
+- Tick completed suggestions
+- Earn Aura Points (+5 per suggestion)
+- Badge system: First Step, Safety Champion, Light Master, Space Improver
+- Points and badges shown in Profile
+
+### Mood Music
+- Spotify playlist suggestion per mood
+- Appears after mood chip selection
+- Sensory suggestions in chat
+
+### Safety & Anti-Hallucination
+- Zone coordinate validation
+- temperature=0.3 strict decoding
+- Content safety guards on all inputs
+- Irish helplines for distress detection
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -210,13 +247,19 @@ cp .env.example .env
 # Edit .env if needed (defaults work for local setup)
 ```
 
-### 4. Run the Server
+### 4. Seed Demo Data
+
+```bash
+python -m backend.seed_demo
+```
+
+### 5. Run the Server
 
 ```bash
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5. Open in Browser
+### 6. Open in Browser
 
 Navigate to `http://localhost:8000` on your phone or desktop.
 
